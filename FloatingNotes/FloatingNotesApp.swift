@@ -11,9 +11,9 @@ import AppKit // Ensure AppKit is imported for NSApplicationDelegate
 // AppDelegate to manage application lifecycle events
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Create the first note window when the app finishes launching
-        WindowManager.shared.addNewNoteWindow()
-        print("AppDelegate: applicationDidFinishLaunching - Initial window requested from WindowManager.")
+        // Open the last note when the app finishes launching, or create a new one if no notes exist
+        WindowManager.shared.openLastNoteOrCreateNew()
+        print("AppDelegate: applicationDidFinishLaunching - Opening last note or creating new one.")
     }
 
     // Optional: Decide if the app should terminate when the last window is closed.
