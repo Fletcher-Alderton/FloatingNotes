@@ -88,6 +88,73 @@ class KeyboardShortcutManager: ObservableObject {
     }
 }
 
+// URL Handler class to manage URL scheme actions
+class URLHandler: ObservableObject {
+    static let shared = URLHandler()
+    
+    private init() {}
+    
+    func handleURL(_ url: URL) {
+        print("URLHandler: Received URL: \(url.absoluteString)")
+        
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              let scheme = components.scheme,
+              scheme == "floatingnotes" else {
+            print("URLHandler: Invalid URL scheme")
+            return
+        }
+        
+        let host = components.host
+        let path = components.path
+        
+        switch host {
+        case "new", "create":
+            handleCreateNewNote(queryItems: components.queryItems)
+        case "recent", "last":
+            handleOpenRecentNote()
+        default:
+            if path == "/new" || path == "/create" {
+                handleCreateNewNote(queryItems: components.queryItems)
+            } else if path == "/recent" || path == "/last" {
+                handleOpenRecentNote()
+            } else {
+                print("URLHandler: Unknown URL action")
+            }
+        }
+    }
+    
+    private func handleCreateNewNote(queryItems: [URLQueryItem]?) {
+        print("URLHandler: Creating new note")
+        
+        // Check if there's initial text provided
+        var initialText = ""
+        if let queryItems = queryItems {
+            for item in queryItems {
+                if item.name == "text" || item.name == "content" {
+                    initialText = item.value?.removingPercentEncoding ?? ""
+                    break
+                }
+            }
+        }
+        
+        // Create new note window with initial text if provided
+        DispatchQueue.main.async {
+            if !initialText.isEmpty {
+                WindowManager.shared.addNewNoteWindow(withInitialText: initialText)
+            } else {
+                WindowManager.shared.addNewNoteWindow()
+            }
+        }
+    }
+    
+    private func handleOpenRecentNote() {
+        print("URLHandler: Opening most recent note")
+        DispatchQueue.main.async {
+            WindowManager.shared.openLastNoteOrCreateNew()
+        }
+    }
+}
+
 // AppDelegate to manage application lifecycle events
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -110,21 +177,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // If there are visible windows, standard behavior is to bring them to front, so just return true.
         return true
     }
+    
+    // Handle URL schemes
+    func application(_ application: NSApplication, open urls: [URL]) {
+        for url in urls {
+            URLHandler.shared.handleURL(url)
+        }
+    }
 }
 
 @main
 struct FloatingNotesApp: App {
     // Use NSApplicationDelegateAdaptor to connect AppDelegate
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    
+    // URL handler instance
+    @StateObject private var urlHandler = URLHandler.shared
 
     var body: some Scene {
-        // The WindowGroup is removed. Windows are now managed by WindowManager.
-        // SwiftUI still requires at least one Scene.
-        // A Settings scene can be used as a placeholder if no main window is defined here.
-        // Or, if you plan to have a main control window or settings accessible from menu,
-        // you could define it here. For now, an empty scene group or Settings {} is fine.
+        // Settings scene for keyboard shortcuts configuration
         Settings {
-            // Settings view for keyboard shortcuts configuration
             SettingsView()
                 .onAppear {
                     // .onAppear actions are performed on the main thread.

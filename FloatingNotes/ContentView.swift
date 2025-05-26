@@ -50,6 +50,42 @@ class WindowManager: NSObject, NSWindowDelegate {
         print("WindowManager: New window created and styled. Total managed windows: \(openWindows.count)")
     }
 
+    func addNewNoteWindow(withInitialText initialText: String) {
+        let newWindow = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 480, height: 300),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            backing: .buffered,
+            defer: false
+        )
+        
+        // Configure frame
+        if let screen = NSScreen.main {
+            let screenRect = screen.visibleFrame
+            let xOffset = CGFloat.random(in: -40...40)
+            let yOffset = CGFloat.random(in: -40...40)
+            let newOriginX = (screenRect.width - newWindow.frame.width) / 2 + xOffset
+            let newOriginY = (screenRect.height - newWindow.frame.height) / 2 + yOffset
+            newWindow.setFrameOrigin(NSPoint(x: newOriginX, y: newOriginY))
+        }
+
+        // Apply all styling directly here
+        newWindow.titlebarAppearsTransparent = true
+        newWindow.styleMask.insert(.fullSizeContentView)
+        newWindow.isOpaque = false
+        newWindow.backgroundColor = .clear
+        newWindow.level = .floating // Make the window float
+        newWindow.collectionBehavior = .canJoinAllSpaces // Show on all spaces
+        
+        // Create NoteView with initial text and a reference to its window.
+        let noteView = NoteView(initialText: initialText, window: newWindow, sourceURL: nil)
+        newWindow.contentView = NSHostingView(rootView: noteView)
+        newWindow.delegate = self // For windowWillClose
+        
+        openWindows.append(newWindow)
+        newWindow.makeKeyAndOrderFront(nil)
+        print("WindowManager: New window created with initial text and styled. Total managed windows: \(openWindows.count)")
+    }
+
     func openNoteFromURL(url: URL) {
         // Check if a window for this note (based on URL or a unique ID derived from it) is already open.
         // This is a simplified check; you might need a more robust way to map URLs to open windows if NoteView instances don't directly store their source URL.

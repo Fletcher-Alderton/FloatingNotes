@@ -416,6 +416,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Floating Notes";
+				INFOPLIST_KEY_CFBundleURLTypes_0_CFBundleURLName = "FloatingNotes URL Scheme";
+				INFOPLIST_KEY_CFBundleURLTypes_0_CFBundleURLSchemes_0 = floatingnotes;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -444,6 +446,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Floating Notes";
+				INFOPLIST_KEY_CFBundleURLTypes_0_CFBundleURLName = "FloatingNotes URL Scheme";
+				INFOPLIST_KEY_CFBundleURLTypes_0_CFBundleURLSchemes_0 = floatingnotes;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
