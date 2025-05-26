@@ -2,16 +2,244 @@ import Foundation
 import Combine
 
 class NotesManager: ObservableObject {
+    static let shared = NotesManager()
+    
     @Published var notes: [NoteItem] = []
     private let pinnedNotesKey = "pinnedNoteIDs" // UserDefaults key
+    private let customNotesDirectoryKey = "customNotesDirectory" // UserDefaults key for custom directory
+    private let directoryBookmarkKey = "directoryBookmark" // UserDefaults key for security-scoped bookmark
+    private var currentSecurityScopedURL: URL? // Track currently accessed security-scoped URL
 
-    init() {
+    private init() {
         loadNotes()
+    }
+    
+    deinit {
+        // Clean up security-scoped resource access
+        currentSecurityScopedURL?.stopAccessingSecurityScopedResource()
     }
 
     func getAppNotesDirectory() -> URL {
+        // Clean up any previously accessed security-scoped resource
+        if let previousURL = currentSecurityScopedURL {
+            previousURL.stopAccessingSecurityScopedResource()
+            currentSecurityScopedURL = nil
+        }
+        
+        // Check if user has set a custom directory with security-scoped bookmark
+        if let bookmarkData = UserDefaults.standard.data(forKey: directoryBookmarkKey) {
+            do {
+                var isStale = false
+                let url = try URL(resolvingBookmarkData: bookmarkData,
+                                options: .withSecurityScope,
+                                relativeTo: nil,
+                                bookmarkDataIsStale: &isStale)
+                
+                if isStale {
+                    print("Bookmark is stale, will need to re-select directory")
+                    // Remove the stale bookmark
+                    UserDefaults.standard.removeObject(forKey: directoryBookmarkKey)
+                    UserDefaults.standard.removeObject(forKey: customNotesDirectoryKey)
+                    UserDefaults.standard.synchronize()
+                } else {
+                    // Start accessing the security-scoped resource
+                    if url.startAccessingSecurityScopedResource() {
+                        // Verify the directory still exists and is accessible
+                        if FileManager.default.fileExists(atPath: url.path) {
+                            currentSecurityScopedURL = url
+                            return url
+                        } else {
+                            url.stopAccessingSecurityScopedResource()
+                        }
+                    }
+                }
+            } catch {
+                print("Error resolving bookmark: \(error)")
+                // Remove invalid bookmark
+                UserDefaults.standard.removeObject(forKey: directoryBookmarkKey)
+                UserDefaults.standard.removeObject(forKey: customNotesDirectoryKey)
+                UserDefaults.standard.synchronize()
+            }
+        }
+        
+        // Fallback: Check legacy custom path (for backwards compatibility)
+        if let customPath = UserDefaults.standard.string(forKey: customNotesDirectoryKey),
+           !customPath.isEmpty {
+            let customURL = URL(fileURLWithPath: customPath)
+            // Verify the directory exists and is accessible
+            if FileManager.default.fileExists(atPath: customURL.path) {
+                return customURL
+            } else {
+                // If custom directory doesn't exist, try to create it
+                do {
+                    try FileManager.default.createDirectory(at: customURL, withIntermediateDirectories: true, attributes: nil)
+                    return customURL
+                } catch {
+                    print("Error creating custom notes directory: \(error). Falling back to default.")
+                    // Fall back to default if custom directory can't be created
+                }
+            }
+        }
+        
+        // Default behavior - use Documents/FloatingNotesApp
         let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
-        return paths[0].appendingPathComponent("FloatingNotesApp")
+        let appDirectory = paths[0].appendingPathComponent("FloatingNotesApp")
+        
+        // Ensure the default directory exists
+        if !FileManager.default.fileExists(atPath: appDirectory.path) {
+            do {
+                try FileManager.default.createDirectory(at: appDirectory, withIntermediateDirectories: true, attributes: nil)
+                print("Created default FloatingNotesApp directory at: \(appDirectory.path)")
+            } catch {
+                print("Error creating default FloatingNotesApp directory: \(error)")
+            }
+        }
+        return appDirectory
+    }
+    
+    func setCustomNotesDirectory(_ url: URL) -> Bool {
+        // Start accessing the security-scoped resource
+        guard url.startAccessingSecurityScopedResource() else {
+            print("Failed to start accessing security-scoped resource")
+            return false
+        }
+        
+        defer {
+            url.stopAccessingSecurityScopedResource()
+        }
+        
+        // Verify the directory exists and is writable
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            print("Selected directory does not exist: \(url.path)")
+            return false
+        }
+        
+        // Test if we can write to the directory
+        let testFile = url.appendingPathComponent(".floating_notes_test")
+        do {
+            try "test".write(to: testFile, atomically: true, encoding: .utf8)
+            try FileManager.default.removeItem(at: testFile)
+        } catch {
+            print("Cannot write to selected directory: \(error)")
+            return false
+        }
+        
+        // Create and store security-scoped bookmark
+        do {
+            let bookmarkData = try url.bookmarkData(options: .withSecurityScope,
+                                                  includingResourceValuesForKeys: nil,
+                                                  relativeTo: nil)
+            UserDefaults.standard.set(bookmarkData, forKey: directoryBookmarkKey)
+            UserDefaults.standard.set(url.path, forKey: customNotesDirectoryKey)
+            UserDefaults.standard.synchronize()
+            
+            print("Successfully set custom directory with bookmark: \(url.path)")
+        } catch {
+            print("Failed to create bookmark for directory: \(error)")
+            return false
+        }
+        
+        // Reload notes from the new directory
+        DispatchQueue.main.async {
+            self.loadNotes()
+        }
+        
+        return true
+    }
+    
+    func getCurrentNotesDirectory() -> URL {
+        return getAppNotesDirectory()
+    }
+    
+    func resetToDefaultDirectory() {
+        UserDefaults.standard.removeObject(forKey: customNotesDirectoryKey)
+        UserDefaults.standard.removeObject(forKey: directoryBookmarkKey)
+        UserDefaults.standard.synchronize()
+        DispatchQueue.main.async {
+            self.loadNotes()
+        }
+    }
+    
+    func migrateNotesToNewDirectory(_ newDirectory: URL) -> Bool {
+        let currentDirectory = getAppNotesDirectory()
+        
+        // Don't migrate if it's the same directory
+        guard currentDirectory != newDirectory else { return true }
+        
+        // Start accessing the security-scoped resource for the new directory
+        guard newDirectory.startAccessingSecurityScopedResource() else {
+            print("Failed to start accessing security-scoped resource for new directory")
+            return false
+        }
+        
+        defer {
+            newDirectory.stopAccessingSecurityScopedResource()
+        }
+        
+        do {
+            // Ensure the new directory exists
+            if !FileManager.default.fileExists(atPath: newDirectory.path) {
+                try FileManager.default.createDirectory(at: newDirectory, withIntermediateDirectories: true, attributes: nil)
+            }
+            
+            let fileURLs = try FileManager.default.contentsOfDirectory(at: currentDirectory,
+                                                                   includingPropertiesForKeys: nil,
+                                                                   options: .skipsHiddenFiles)
+            
+            var migratedCount = 0
+            for fileURL in fileURLs {
+                if fileURL.pathExtension == "md" {
+                    let destinationURL = newDirectory.appendingPathComponent(fileURL.lastPathComponent)
+                    
+                    // Check if file already exists at destination
+                    if FileManager.default.fileExists(atPath: destinationURL.path) {
+                        // Create a unique name by appending a number
+                        let baseName = fileURL.deletingPathExtension().lastPathComponent
+                        let ext = fileURL.pathExtension
+                        var counter = 1
+                        var uniqueDestination = destinationURL
+                        
+                        while FileManager.default.fileExists(atPath: uniqueDestination.path) {
+                            let uniqueName = "\(baseName)_\(counter).\(ext)"
+                            uniqueDestination = newDirectory.appendingPathComponent(uniqueName)
+                            counter += 1
+                        }
+                        
+                        try FileManager.default.copyItem(at: fileURL, to: uniqueDestination)
+                    } else {
+                        try FileManager.default.copyItem(at: fileURL, to: destinationURL)
+                    }
+                    migratedCount += 1
+                }
+            }
+            
+            print("Migrated \(migratedCount) notes to new directory")
+            
+            // Create and store security-scoped bookmark for the new directory
+            do {
+                let bookmarkData = try newDirectory.bookmarkData(options: .withSecurityScope,
+                                                              includingResourceValuesForKeys: nil,
+                                                              relativeTo: nil)
+                UserDefaults.standard.set(bookmarkData, forKey: directoryBookmarkKey)
+                UserDefaults.standard.set(newDirectory.path, forKey: customNotesDirectoryKey)
+                UserDefaults.standard.synchronize()
+                
+                print("Successfully created bookmark for migrated directory: \(newDirectory.path)")
+            } catch {
+                print("Failed to create bookmark for migrated directory: \(error)")
+                // Still return true since migration succeeded, but bookmark creation failed
+            }
+            
+            // Reload notes from new directory
+            DispatchQueue.main.async {
+                self.loadNotes()
+            }
+            
+            return true
+        } catch {
+            print("Error migrating notes: \(error)")
+            return false
+        }
     }
 
     func loadNotes() {

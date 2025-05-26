@@ -1,6 +1,9 @@
 import SwiftUI
 import AppKit
 
+// TODO:
+// - Replace the settings link with a pin button that will enable (canJoinAllSpaces) or disable (canJoinAllSpaces) the window to follow the user across spaces.
+
 // Class to manage window lifecycle and retention
 class WindowManager: NSObject, NSWindowDelegate {
     static let shared = WindowManager()
@@ -35,6 +38,7 @@ class WindowManager: NSObject, NSWindowDelegate {
         newWindow.isOpaque = false
         newWindow.backgroundColor = .clear
         newWindow.level = .floating // Make the window float
+        newWindow.collectionBehavior = .canJoinAllSpaces // Show on all spaces
         
         // Create NoteView with a reference to its window.
         let noteView = NoteView(window: newWindow) // Window is now fully configured
@@ -85,6 +89,7 @@ class WindowManager: NSObject, NSWindowDelegate {
         newWindow.isOpaque = false
         newWindow.backgroundColor = .clear
         newWindow.level = .floating
+        newWindow.collectionBehavior = .canJoinAllSpaces // Show on all spaces
 
         // Create NoteView with the loaded content and its window.
         // We need to modify NoteView to accept initial text and potentially the URL for saving purposes.
@@ -120,6 +125,7 @@ class WindowManager: NSObject, NSWindowDelegate {
         newWindow.isOpaque = false
         newWindow.backgroundColor = .clear
         newWindow.level = .floating // Make the window float like note windows
+        newWindow.collectionBehavior = .canJoinAllSpaces // Show on all spaces
         
         newWindow.contentView = notesListHostingView
         newWindow.isReleasedWhenClosed = false // Important: Keep the window instance around
@@ -191,8 +197,35 @@ class WindowManager: NSObject, NSWindowDelegate {
         }
     }
 
+    func closeNotesListWindow() {
+        notesListWindow?.close()
+        print("WindowManager: Notes list window closed via closeNotesListWindow()")
+    }
+
     // Static helper to get the app's documents directory + app-specific subfolder
     static func getAppNotesDirectory() -> URL {
+        let customNotesDirectoryKey = "customNotesDirectory"
+        
+        // Check if user has set a custom directory
+        if let customPath = UserDefaults.standard.string(forKey: customNotesDirectoryKey),
+           !customPath.isEmpty {
+            let customURL = URL(fileURLWithPath: customPath)
+            // Verify the directory exists and is accessible
+            if FileManager.default.fileExists(atPath: customURL.path) {
+                return customURL
+            } else {
+                // If custom directory doesn't exist, try to create it
+                do {
+                    try FileManager.default.createDirectory(at: customURL, withIntermediateDirectories: true, attributes: nil)
+                    return customURL
+                } catch {
+                    print("WindowManager: Error creating custom notes directory: \(error). Falling back to default.")
+                    // Fall back to default if custom directory can't be created
+                }
+            }
+        }
+        
+        // Default behavior - use Documents/FloatingNotesApp
         let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
         let appDirectory = paths[0].appendingPathComponent("FloatingNotesApp")
         
@@ -233,9 +266,14 @@ struct NoteView: View {
     weak var window: NSWindow?
     // Store the source URL if the note was opened from a file
     @State private var sourceURL: URL?
+    
+    // AppStorage for default pin setting
+    @AppStorage("defaultIsPinned") private var defaultIsPinned: Bool = true
 
     let noteID: UUID // Unique ID for each note instance
     @State private var lastSavedFilenameComponent: String? // To track the filename for renames
+    @State private var isPinned: Bool
+    @FocusState private var isFocused: Bool
 
     // Initializer for new notes
     init(window: NSWindow?) {
@@ -243,6 +281,7 @@ struct NoteView: View {
         self.window = window
         self.noteID = UUID() // New note, new ID
         self._sourceURL = State(initialValue: nil)
+        self._isPinned = State(initialValue: UserDefaults.standard.object(forKey: "defaultIsPinned") as? Bool ?? true)
         print("NoteView init (new note): self.window is nil? \(self.window == nil), noteID: \(self.noteID)")
     }
 
@@ -251,6 +290,7 @@ struct NoteView: View {
         _noteText = State(initialValue: initialText)
         self.window = window
         self._sourceURL = State(initialValue: sourceURL)
+        self._isPinned = State(initialValue: UserDefaults.standard.object(forKey: "defaultIsPinned") as? Bool ?? true)
 
         // Attempt to parse UUID from filename if sourceURL is provided
         if let url = sourceURL,
@@ -283,6 +323,8 @@ struct NoteView: View {
                 //.padding(.top, 10)
                 //.padding(.bottom, 10)
         }
+        .focusable()
+        .focused($isFocused)
         .onAppear {
             print("NoteView onAppear: self.window is nil? \(self.window == nil)")
             // Window is configured by WindowManager before NoteView appears.
@@ -295,33 +337,44 @@ struct NoteView: View {
                 // This case should ideally not be hit if WindowManager always provides a window.
                 print("NoteView onAppear: Window IS NIL. Cannot set initial title.")
             }
+            isFocused = true
         }
-        .onChange(of: noteText) { newValue in
+        .onDisappear {
+            isFocused = false
+        }
+        .onExitCommand {
+            // Close the window when ESC is pressed
+            window?.close()
+            print("NoteView onExitCommand: Window closed")
+        }
+        .onChange(of: noteText) {
             self.updateTitleBasedOnText()
             self.saveNoteToFile() // Save content whenever text changes
         }
         .onChange(of: window) { oldWindow, newWindow in
-            // This onChange for the window property itself might be less critical now,
-            // as the window is provided at init.
-            // However, if it does change (e.g. from nil to non-nil in some other scenario),
-            // ensuring the title is updated is good.
+            // Handle window reference changes
             print("NoteView onChange(of: window): oldWindow is nil? \(oldWindow == nil), newWindow is nil? \(newWindow == nil)")
             if oldWindow == nil && newWindow != nil {
                 print("NoteView onChange(of: window): Window transitioned from NIL to SET. Calling updateTitleBasedOnText.")
-                updateTitleBasedOnText() // Ensure title is set if window reference changes
+                updateTitleBasedOnText()
             }
         }
         // Add a toolbar to the window containing buttons
         .toolbar {
             // Place the toolbar items on the trailing side (right side)
             ToolbarItemGroup(placement: .automatic) {
-                // Button 1 (Command mode icon)
+                // Pin Button
                 Button {
-                    // Action for grid button tapped
-                    print("Commmand button tapped")
+                    isPinned.toggle()
+                    if let window = window {
+                        if isPinned {
+                            window.collectionBehavior = .canJoinAllSpaces
+                        } else {
+                            window.collectionBehavior = .managed
+                        }
+                    }
                 } label: {
-                    // Using SF Symbols for the icons
-                    Label("Command", systemImage: "command")
+                    Label("Pin", systemImage: isPinned ? "pin.fill" : "pin")
                 }
 
                 // Button 2 (List mode icon)
@@ -358,6 +411,13 @@ struct NoteView: View {
     }
 
     private func saveNoteToFile() {
+        // Check if the note has any content (non-whitespace text)
+        let trimmedText = noteText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedText.isEmpty {
+            print("NoteView: Note is empty, skipping save")
+            return
+        }
+        
         let notesDirectory = getAppNotesDirectory()
 
         let currentFirstLine = noteText.components(separatedBy: .newlines).first?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""

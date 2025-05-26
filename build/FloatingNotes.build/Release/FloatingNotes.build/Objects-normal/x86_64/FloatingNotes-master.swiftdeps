@@ -1,0 +1,15 @@
+version: "Apple Swift version 6.1 (swiftlang-6.1.0.110.21 clang-1700.0.13.3)"
+options: "e0aeefed4808f4d3ca19cc42ae82649460c9d34d7422069b62e32f45414e2472"
+build_start_time: [1748156313, 246566000]
+build_end_time: [1748156317, 700846000]
+inputs:
+  "/Users/fletcher/Documents/Code/Floating Notes SwiftUI/FloatingNotes/FloatingNotes/ContentView.swift": !dirty [1748155831, 568338964]
+  "/Users/fletcher/Documents/Code/Floating Notes SwiftUI/FloatingNotes/FloatingNotes/FloatingNotesApp.swift": !dirty [1748156253, 565985401]
+  "/Users/fletcher/Documents/Code/Floating Notes SwiftUI/FloatingNotes/FloatingNotes/KeyboardShortcutNames.swift": !dirty [1748156253, 562593870]
+  "/Users/fletcher/Documents/Code/Floating Notes SwiftUI/FloatingNotes/FloatingNotes/MenuCommands.swift": !dirty [1748156253, 572708879]
+  "/Users/fletcher/Documents/Code/Floating Notes SwiftUI/FloatingNotes/FloatingNotes/NoteItem.swift": !dirty [1748082786, 997619561]
+  "/Users/fletcher/Documents/Code/Floating Notes SwiftUI/FloatingNotes/FloatingNotes/NotesListView.swift": !dirty [1748155132, 714840975]
+  "/Users/fletcher/Documents/Code/Floating Notes SwiftUI/FloatingNotes/FloatingNotes/NotesManager.swift": !dirty [1748082919, 150887333]
+  "/Users/fletcher/Documents/Code/Floating Notes SwiftUI/FloatingNotes/FloatingNotes/SettingsView.swift": !dirty [1748156253, 565944234]
+  ? "/Users/fletcher/Documents/Code/Floating Notes SwiftUI/FloatingNotes/build/FloatingNotes.build/Release/FloatingNotes.build/DerivedSources/GeneratedAssetSymbols.swift"
+  : !dirty [1748156311, 968448932]

@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		5A2A5AAD2DE2F7BF00A47A12 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 5A2A5AAC2DE2F7BF00A47A12 /* KeyboardShortcuts */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		5A2A5A6C2DE1B43300A47A12 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -45,6 +49,11 @@
 			path = FloatingNotesUITests;
 			sourceTree = "<group>";
 		};
+		5A2A5AB62DE33CD200A47A12 /* Assets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Assets;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -52,6 +61,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5A2A5AAD2DE2F7BF00A47A12 /* KeyboardShortcuts in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -75,6 +85,7 @@
 		5A2A5A542DE1B43100A47A12 = {
 			isa = PBXGroup;
 			children = (
+				5A2A5AB62DE33CD200A47A12 /* Assets */,
 				5A2A5A5F2DE1B43100A47A12 /* FloatingNotes */,
 				5A2A5A6E2DE1B43300A47A12 /* FloatingNotesTests */,
 				5A2A5A782DE1B43300A47A12 /* FloatingNotesUITests */,
@@ -109,9 +120,11 @@
 			);
 			fileSystemSynchronizedGroups = (
 				5A2A5A5F2DE1B43100A47A12 /* FloatingNotes */,
+				5A2A5AB62DE33CD200A47A12 /* Assets */,
 			);
 			name = FloatingNotes;
 			packageProductDependencies = (
+				5A2A5AAC2DE2F7BF00A47A12 /* KeyboardShortcuts */,
 			);
 			productName = FloatingNotes;
 			productReference = 5A2A5A5D2DE1B43100A47A12 /* FloatingNotes.app */;
@@ -195,6 +208,9 @@
 			);
 			mainGroup = 5A2A5A542DE1B43100A47A12;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				5A2A5AAB2DE2F5DC00A47A12 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 5A2A5A5E2DE1B43100A47A12 /* Products */;
 			projectDirPath = "";
@@ -392,12 +408,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = FloatingNotes/FloatingNotes.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Floating Notes";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -417,12 +436,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = FloatingNotes/FloatingNotes.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Floating Notes";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -541,6 +563,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		5A2A5AAB2DE2F5DC00A47A12 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.3.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		5A2A5AAC2DE2F7BF00A47A12 /* KeyboardShortcuts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5A2A5AAB2DE2F5DC00A47A12 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
+			productName = KeyboardShortcuts;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 5A2A5A552DE1B43100A47A12 /* Project object */;
 }

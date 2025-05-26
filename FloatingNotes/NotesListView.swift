@@ -45,21 +45,20 @@ struct TransparentSectionHeader: View {
         Text(title)
             .font(.headline)
             .foregroundColor(.primary)
-            .padding(.top, 8)
-            .padding(.leading, 16) // Add leading padding to align with row content
-            .frame(maxWidth: .infinity, alignment: .leading) // Ensure it takes available width
-            .background(Color.clear) // Make the background transparent
-            // Optionally, add the visual effect view if you want the header area itself to have the blur/translucency effect.
-            // For now, let's stick to clear to ensure the underlying VisualEffectView of the window shows through.
+            .padding(.top, 6)
+            .padding(.leading, 12) // Reduced leading padding
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.clear)
     }
 }
 
 struct NotesListView: View {
-    @StateObject private var notesManager = NotesManager()
+    @ObservedObject private var notesManager = NotesManager.shared
     @State private var searchText: String = ""
     // State to manage the presentation of the confirmation dialog
     @State private var showingDeleteConfirm: Bool = false
     @State private var noteToDelete: NoteItem? = nil
+    @FocusState private var isFocused: Bool
 
     // Access the window manager
     // Note: Direct access like this isn't typical for standalone SwiftUI views,
@@ -78,14 +77,14 @@ struct NotesListView: View {
                 // Search Bar with translucent styling
                 TextField("Search for notes...", text: $searchText)
                     .textFieldStyle(PlainTextFieldStyle())
-                    .padding(EdgeInsets(top: 10, leading: 14, bottom: 10, trailing: 14))
+                    .padding(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
                     .background(Color.white.opacity(0.1))
-                    .cornerRadius(10)
+                    .cornerRadius(8)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 10)
+                        RoundedRectangle(cornerRadius: 8)
                             .stroke(Color.white.opacity(0.2), lineWidth: 1)
                     )
-                    .padding(EdgeInsets(top: 12, leading: 12, bottom: 8, trailing: 12))
+                    .padding(EdgeInsets(top: 8, leading: 8, bottom: 6, trailing: 8))
                     .foregroundColor(.primary)
 
                 // This ID changes when the pinned section's visibility should change,
@@ -100,8 +99,8 @@ struct NotesListView: View {
                             TransparentSectionHeader(title: "Pinned") // Use the header view
                             ForEach(pinnedNotes) { note in
                                 noteRow(note: note)
-                                    .padding(.vertical, 4) // Add vertical padding to rows
-                                    .padding(.horizontal, 12) // Add horizontal padding to rows
+                                    .padding(.vertical, 2) // Reduced vertical padding
+                                    .frame(maxWidth: .infinity) // Center the note row
                             }
                         }
 
@@ -114,29 +113,41 @@ struct NotesListView: View {
                             }
                             ForEach(unpinnedNotes) { note in
                                 noteRow(note: note)
-                                    .padding(.vertical, 4) // Add vertical padding to rows
-                                    .padding(.horizontal, 12) // Add horizontal padding to rows
+                                    .padding(.vertical, 2) // Reduced vertical padding
+                                    .frame(maxWidth: .infinity) // Center the note row
                             }
                             if unpinnedNotes.isEmpty && searchText.isEmpty && pinnedNotes.isEmpty {
                                 Text("No notes found. Create one!")
                                     .foregroundColor(.secondary)
-                                    .padding(.vertical, 4)
-                                    .padding(.horizontal, 12) // Add horizontal padding
+                                    .padding(.vertical, 2)
+                                    .padding(.horizontal, 8) // Reduced horizontal padding
                             } else if unpinnedNotes.isEmpty && !searchText.isEmpty {
                                  Text("No notes match your search.")
                                     .foregroundColor(.secondary)
-                                    .padding(.vertical, 4)
-                                    .padding(.horizontal, 12) // Add horizontal padding
+                                    .padding(.vertical, 2)
+                                    .padding(.horizontal, 8) // Reduced horizontal padding
                             }
                         }
                     }
-                    .padding(.vertical, 8) // Add vertical padding to the VStack content
+                    .padding(.vertical, 4) // Reduced vertical padding for the VStack content
+                    .padding(.horizontal, 10) // Add horizontal padding to center content and leave room for scroll view
                 }
             }
         }
-        .frame(minWidth: 300, idealWidth: 350, maxWidth: .infinity, minHeight: 200, idealHeight: 400, maxHeight: .infinity)
+        .frame(minWidth: 350, maxWidth: 350, minHeight: 400, maxHeight: .infinity) // Fixed size for width, flexible height
+        .focusable()
+        .focused($isFocused)
         .onAppear {
             loadNotes()
+            isFocused = true
+        }
+        .onDisappear {
+            isFocused = false
+        }
+        .onExitCommand {
+            // Close the notes list window when ESC is pressed
+            WindowManager.shared.closeNotesListWindow()
+            print("NotesListView onExitCommand: Notes list window closed")
         }
         .alert(isPresented: $showingDeleteConfirm) {
             Alert(
@@ -155,26 +166,29 @@ struct NotesListView: View {
     // Helper view for note row
     private func noteRow(note: NoteItem) -> some View {
         HStack {
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 2) { // Reduced spacing between title and subtitle
                 Text(note.title)
                     .font(.headline)
                     .foregroundColor(.primary)
                     .lineLimit(1)
+                    .truncationMode(.tail)
                 
                 // Example subtitle - you can customize this
                 Text("Opened recently \u{2022} \(note.url.lastPathComponent.count) Characters")
-                    .font(.subheadline)
+                    .font(.caption) // Changed from subheadline to caption for more compact display
                     .foregroundColor(.secondary)
                     .lineLimit(1)
+                    .truncationMode(.tail)
             }
-            Spacer()
+            .frame(maxWidth: .infinity, alignment: .leading) // Allow text to take available space
             
-            HStack(spacing: 8) {
+            HStack(spacing: 6) { // Reduced spacing between buttons
                 Button {
                     togglePin(note: note)
                 } label: {
                     Image(systemName: note.isPinned ? "pin.fill" : "pin")
                         .foregroundColor(note.isPinned ? .yellow : .secondary)
+                        .font(.system(size: 14)) // Slightly smaller icons
                 }
                 .buttonStyle(BorderlessButtonStyle())
                 .help(note.isPinned ? "Unpin note" : "Pin note")
@@ -185,17 +199,20 @@ struct NotesListView: View {
                 } label: {
                     Image(systemName: "trash")
                         .foregroundColor(.secondary)
+                        .font(.system(size: 14)) // Slightly smaller icons
                 }
                 .buttonStyle(BorderlessButtonStyle())
                 .help("Delete note")
             }
+            .frame(width: 60) // Fixed width for button area
         }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 12)
+        .frame(width: 310) // Fixed width that leaves room for even padding and scroll view
+        .padding(.vertical, 6) // Reduced vertical padding
+        .padding(.horizontal, 10) // horizontal padding
         .background(Color.white.opacity(0.05))
-        .cornerRadius(10)
+        .cornerRadius(8) // Slightly smaller corner radius
         .overlay(
-            RoundedRectangle(cornerRadius: 10)
+            RoundedRectangle(cornerRadius: 8)
                 .stroke(Color.white.opacity(0.1), lineWidth: 1)
         )
         .contentShape(Rectangle()) // Make the whole row tappable
@@ -238,45 +255,11 @@ struct NotesListView: View {
     }
 
     func getAppNotesDirectory() -> URL {
-        let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
-        return paths[0].appendingPathComponent("FloatingNotesApp")
+        return notesManager.getAppNotesDirectory()
     }
 
     func loadNotes() {
-        let notesDirectory = getAppNotesDirectory()
-        var loadedNotes: [NoteItem] = []
-        let pinnedIDs = UserDefaults.standard.array(forKey: pinnedNotesKey) as? [String] ?? []
-
-        do {
-            let fileURLs = try FileManager.default.contentsOfDirectory(at: notesDirectory,
-                                                                   includingPropertiesForKeys: [.contentModificationDateKey, .nameKey],
-                                                                   options: .skipsHiddenFiles)
-            for url in fileURLs {
-                if url.pathExtension == "md" {
-                    let filename = url.lastPathComponent
-                    let components = filename.replacingOccurrences(of: ".md", with: "").split(separator: "_")
-                    let title = components.dropLast().joined(separator: "_")
-                    let idString = String(components.last ?? "")
-                    
-                    let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
-                    let modificationDate = attributes[.modificationDate] as? Date
-
-                    if let uuid = UUID(uuidString: idString) {
-                        let isPinned = pinnedIDs.contains(uuid.uuidString)
-                        loadedNotes.append(NoteItem(id: uuid, title: title.isEmpty ? "Untitled Note" : title, url: url, isPinned: isPinned, lastModified: modificationDate))
-                    } else {
-                        let fallbackTitle = filename.replacingOccurrences(of: ".md", with: "")
-                        // Notes that couldn't parse a UUID from filename won't be able to persist pinning by ID.
-                        // They will always appear unpinned unless their filename format is corrected.
-                        loadedNotes.append(NoteItem(id: UUID(), title: fallbackTitle, url: url, isPinned: false, lastModified: modificationDate))
-                         print("Could not parse UUID from filename: \(filename). Using filename as title and new UUID. Pinning may not work for this note.")
-                    }
-                }
-            }
-        } catch {
-            print("Error loading notes: \(error)")
-        }
-        self.notesManager.notes = loadedNotes // Sorting is now handled by filteredNotes
+        notesManager.loadNotes()
     }
 
     func togglePin(note: NoteItem) {
