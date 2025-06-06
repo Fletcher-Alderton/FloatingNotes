@@ -161,6 +161,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Initialize keyboard shortcut manager
         _ = KeyboardShortcutManager.shared
         
+        // Initialize app display manager (dock vs menu bar)
+        AppDisplayManager.shared.initialize()
+        
         // Open the last note when the app finishes launching, or create a new one if no notes exist
         WindowManager.shared.openLastNoteOrCreateNew()
         print("AppDelegate: applicationDidFinishLaunching - Opening last note or creating new one.")

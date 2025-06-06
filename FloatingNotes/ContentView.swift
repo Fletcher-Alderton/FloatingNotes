@@ -4,6 +4,18 @@ import AppKit
 // TODO:
 // - Replace the settings link with a pin button that will enable (canJoinAllSpaces) or disable (canJoinAllSpaces) the window to follow the user across spaces.
 
+// Custom NSHostingView that disables focus ring
+class NoFocusRingHostingView<Content: View>: NSHostingView<Content> {
+    override var focusRingType: NSFocusRingType {
+        get { return .none }
+        set { }
+    }
+    
+    override var acceptsFirstResponder: Bool {
+        return false
+    }
+}
+
 // Class to manage window lifecycle and retention
 class WindowManager: NSObject, NSWindowDelegate {
     static let shared = WindowManager()
@@ -42,7 +54,8 @@ class WindowManager: NSObject, NSWindowDelegate {
         
         // Create NoteView with a reference to its window.
         let noteView = NoteView(window: newWindow) // Window is now fully configured
-        newWindow.contentView = NSHostingView(rootView: noteView)
+        let hostingView = NoFocusRingHostingView(rootView: noteView)
+        newWindow.contentView = hostingView
         newWindow.delegate = self // For windowWillClose
         
         openWindows.append(newWindow)
@@ -75,10 +88,15 @@ class WindowManager: NSObject, NSWindowDelegate {
         newWindow.backgroundColor = .clear
         newWindow.level = .floating // Make the window float
         newWindow.collectionBehavior = .canJoinAllSpaces // Show on all spaces
+        newWindow.hasShadow = false // Remove window shadow/border
+        newWindow.standardWindowButton(.closeButton)?.isHidden = false
+        newWindow.standardWindowButton(.miniaturizeButton)?.isHidden = false
+        newWindow.standardWindowButton(.zoomButton)?.isHidden = false
         
         // Create NoteView with initial text and a reference to its window.
         let noteView = NoteView(initialText: initialText, window: newWindow, sourceURL: nil)
-        newWindow.contentView = NSHostingView(rootView: noteView)
+        let hostingView = NoFocusRingHostingView(rootView: noteView)
+        newWindow.contentView = hostingView
         newWindow.delegate = self // For windowWillClose
         
         openWindows.append(newWindow)
@@ -126,11 +144,16 @@ class WindowManager: NSObject, NSWindowDelegate {
         newWindow.backgroundColor = .clear
         newWindow.level = .floating
         newWindow.collectionBehavior = .canJoinAllSpaces // Show on all spaces
+        newWindow.hasShadow = false // Remove window shadow/border
+        newWindow.standardWindowButton(.closeButton)?.isHidden = false
+        newWindow.standardWindowButton(.miniaturizeButton)?.isHidden = false
+        newWindow.standardWindowButton(.zoomButton)?.isHidden = false
 
         // Create NoteView with the loaded content and its window.
         // We need to modify NoteView to accept initial text and potentially the URL for saving purposes.
         let noteView = NoteView(initialText: noteContent, window: newWindow, sourceURL: url)
-        newWindow.contentView = NSHostingView(rootView: noteView)
+        let hostingView = NoFocusRingHostingView(rootView: noteView)
+        newWindow.contentView = hostingView
         newWindow.delegate = self
 
         openWindows.append(newWindow)
@@ -145,7 +168,7 @@ class WindowManager: NSObject, NSWindowDelegate {
             return
         }
 
-        let notesListHostingView = NSHostingView(rootView: NotesListView())
+        let notesListHostingView = NoFocusRingHostingView(rootView: NotesListView())
         let newWindow = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 350, height: 500), // Adjust size as needed
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
@@ -162,6 +185,10 @@ class WindowManager: NSObject, NSWindowDelegate {
         newWindow.backgroundColor = .clear
         newWindow.level = .floating // Make the window float like note windows
         newWindow.collectionBehavior = .canJoinAllSpaces // Show on all spaces
+        newWindow.hasShadow = false // Remove window shadow/border
+        newWindow.standardWindowButton(.closeButton)?.isHidden = false
+        newWindow.standardWindowButton(.miniaturizeButton)?.isHidden = false
+        newWindow.standardWindowButton(.zoomButton)?.isHidden = false
         
         newWindow.contentView = notesListHostingView
         newWindow.isReleasedWhenClosed = false // Important: Keep the window instance around
@@ -284,12 +311,20 @@ struct VisualEffectView: NSViewRepresentable {
         let visualEffect = NSVisualEffectView()
         visualEffect.blendingMode = .behindWindow
         visualEffect.state = .active
-        visualEffect.material = .dark
         return visualEffect
     }
     
     func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
         // No updates needed
+    }
+}
+
+// Add this class before the NoteView struct
+class WindowResizeObserver: NSObject {
+    var onWindowResize: (() -> Void)?
+    
+    @objc func windowDidResize(_ notification: Notification) {
+        onWindowResize?()
     }
 }
 
@@ -310,6 +345,19 @@ struct NoteView: View {
     @State private var lastSavedFilenameComponent: String? // To track the filename for renames
     @State private var isPinned: Bool
     @FocusState private var isFocused: Bool
+    
+    // Auto-sizing properties
+    @State private var isAutoSizingEnabled: Bool = true
+    @State private var hasUserManuallyResized: Bool = false
+    @State private var resizeObserver: WindowResizeObserver? = nil
+    @State private var showAutoSizeButton: Bool = false
+    @State private var hideButtonTask: Task<Void, Never>? = nil
+    
+    // Constants for auto-sizing
+    private let minWindowHeight: CGFloat = 150
+    private let maxAutoSizeHeight: CGFloat = 600
+    private let lineHeight: CGFloat = 20 // Approximate line height
+    private let basePadding: CGFloat = 80 // Title bar + padding
 
     // Initializer for new notes
     init(window: NSWindow?) {
@@ -341,6 +389,31 @@ struct NoteView: View {
         print("NoteView init (from URL): self.window is nil? \(self.window == nil), noteID: \(self.noteID), sourceURL: \(sourceURL?.absoluteString ?? "nil")")
     }
 
+    // Hover area view for auto-size button overlay, to simplify the body
+    private var autoSizeHoverArea: some View {
+        Rectangle()
+            .fill(Color.clear)
+            .frame(maxWidth: .infinity, maxHeight: 20)
+            .onContinuousHover { phase in
+                switch phase {
+                case .active(_):
+                    hideButtonTask?.cancel()
+                    hideButtonTask = nil
+                    showAutoSizeButton = true
+                case .ended:
+                    hideButtonTask?.cancel()
+                    hideButtonTask = Task {
+                        try? await Task.sleep(nanoseconds: 300_000_000)
+                        if !Task.isCancelled {
+                            await MainActor.run {
+                                showAutoSizeButton = false
+                            }
+                        }
+                    }
+                }
+            }
+    }
+
     var body: some View {
         ZStack {
             // Background visual effect
@@ -358,6 +431,65 @@ struct NoteView: View {
                 //.padding(.trailing, 10)
                 //.padding(.top, 10)
                 //.padding(.bottom, 10)
+            
+            // Auto-size hover area always visible
+            VStack {
+                Spacer()
+                autoSizeHoverArea
+            }
+
+            // Auto-size button overlay
+            if showAutoSizeButton {
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        Button {
+                            hasUserManuallyResized = false
+                            isAutoSizingEnabled = true
+                            adjustWindowSizeForText()
+                            showAutoSizeButton = false
+                            // Cancel any pending hide task since we're manually hiding
+                            hideButtonTask?.cancel()
+                            hideButtonTask = nil
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "arrow.up.and.down.and.arrow.left.and.right")
+                                    .font(.system(size: 12))
+                                Text("Auto Size")
+                                    .font(.system(size: 12, weight: .medium))
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+                            .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+                        }
+                        .buttonStyle(.plain)
+                        .onContinuousHover { phase in
+                            switch phase {
+                            case .active(_):
+                                hideButtonTask?.cancel()
+                                hideButtonTask = nil
+                                showAutoSizeButton = true
+                            case .ended:
+                                hideButtonTask?.cancel()
+                                hideButtonTask = Task {
+                                    try? await Task.sleep(nanoseconds: 200_000_000)
+                                    if !Task.isCancelled {
+                                        await MainActor.run {
+                                            showAutoSizeButton = false
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Spacer()
+                    }
+                    .padding(.bottom, 8)
+                }
+                .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                .animation(.easeInOut(duration: 0.2), value: showAutoSizeButton)
+            }
         }
         .focusable()
         .focused($isFocused)
@@ -369,6 +501,8 @@ struct NoteView: View {
                 print("NoteView onAppear: Window IS SET. Calling updateTitleBasedOnText.")
                 updateTitleBasedOnText()
                 saveNoteToFile() // Save initial state (e.g., empty note)
+                setupWindowResizeObserver() // Setup resize observer
+                adjustWindowSizeForText() // Initial size adjustment
             } else {
                 // This case should ideally not be hit if WindowManager always provides a window.
                 print("NoteView onAppear: Window IS NIL. Cannot set initial title.")
@@ -377,6 +511,10 @@ struct NoteView: View {
         }
         .onDisappear {
             isFocused = false
+            cleanupWindowResizeObserver()
+            // Cancel any pending hide task
+            hideButtonTask?.cancel()
+            hideButtonTask = nil
         }
         .onExitCommand {
             // Close the window when ESC is pressed
@@ -386,6 +524,9 @@ struct NoteView: View {
         .onChange(of: noteText) {
             self.updateTitleBasedOnText()
             self.saveNoteToFile() // Save content whenever text changes
+            if isAutoSizingEnabled && !hasUserManuallyResized {
+                adjustWindowSizeForText()
+            }
         }
         .onChange(of: window) { oldWindow, newWindow in
             // Handle window reference changes
@@ -393,6 +534,8 @@ struct NoteView: View {
             if oldWindow == nil && newWindow != nil {
                 print("NoteView onChange(of: window): Window transitioned from NIL to SET. Calling updateTitleBasedOnText.")
                 updateTitleBasedOnText()
+                setupWindowResizeObserver()
+                adjustWindowSizeForText()
             }
         }
         // Add a toolbar to the window containing buttons
@@ -530,12 +673,72 @@ struct NoteView: View {
         }
         return sanitized
     }
-}
 
-// Optional: Preview Provider for Xcode Canvas (mainly for iOS/iPadOS previews,
-// less critical for simple macOS views but can still be useful)
-/*
-#Preview {
-    NoteView()
+    private func setupWindowResizeObserver() {
+        guard let window = window else { return }
+        
+        // Clean up any existing observer
+        cleanupWindowResizeObserver()
+        
+        // Add observer for window resize events
+        resizeObserver = WindowResizeObserver()
+        resizeObserver?.onWindowResize = {
+            // Mark that user has manually resized if auto-sizing is enabled
+            if self.isAutoSizingEnabled {
+                print("User manually resized window - disabling auto-sizing")
+                self.hasUserManuallyResized = true
+                // hide the auto-size button by default only show when the user hovers over autosizehoverarea
+                self.showAutoSizeButton = false
+            }
+        }
+        NotificationCenter.default.addObserver(resizeObserver as Any, selector: #selector(WindowResizeObserver.windowDidResize(_:)), name: NSWindow.didResizeNotification, object: window)
+    }
+    
+    private func cleanupWindowResizeObserver() {
+        if let observer = resizeObserver {
+            NotificationCenter.default.removeObserver(observer)
+            resizeObserver = nil
+        }
+    }
+    
+    private func adjustWindowSizeForText() {
+        guard let window = window, isAutoSizingEnabled, !hasUserManuallyResized else { return }
+        
+        // Determine content width for text bounding
+        let horizontalPadding: CGFloat = 20 // adjust according to TextEditor padding
+        let contentWidth: CGFloat
+        if let contentViewWidth = window.contentView?.frame.width {
+            contentWidth = contentViewWidth - horizontalPadding
+        } else {
+            contentWidth = window.frame.width - horizontalPadding
+        }
+
+        // Compute bounding rect for text content
+        let textNSString = noteText as NSString
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 14)
+        ]
+        let boundingRect = textNSString.boundingRect(
+            with: CGSize(width: contentWidth, height: .greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            attributes: attributes
+        )
+        let contentHeight = boundingRect.height
+        // Calculate total and final height
+        let totalHeight = min(contentHeight + basePadding, maxAutoSizeHeight)
+        let finalHeight = max(totalHeight, minWindowHeight)
+        
+        // Get current frame
+        var newFrame = window.frame
+        
+        // Adjust height while keeping the top position fixed
+        let heightDifference = finalHeight - newFrame.height
+        newFrame.size.height = finalHeight
+        newFrame.origin.y -= heightDifference // Move window down to keep top edge in place
+        
+        // Animate the resize
+        window.setFrame(newFrame, display: true, animate: true)
+        
+        print("Auto-resized window to height: \(finalHeight) for \(contentHeight) lines")
+    }
 }
-*/
