@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import SwiftDown
 
 // TODO:
 // - Replace the settings link with a pin button that will enable (canJoinAllSpaces) or disable (canJoinAllSpaces) the window to follow the user across spaces.
@@ -105,9 +106,14 @@ class WindowManager: NSObject, NSWindowDelegate {
     }
 
     func openNoteFromURL(url: URL) {
-        // Check if a window for this note (based on URL or a unique ID derived from it) is already open.
-        // This is a simplified check; you might need a more robust way to map URLs to open windows if NoteView instances don't directly store their source URL.
-        // For now, let's assume we always create a new window or bring an existing one to front based on title/ID.
+        // Prevent duplicate windows: bring existing note window to front if it's already open
+        for window in openWindows {
+            if window.representedURL == url {
+                window.makeKeyAndOrderFront(nil)
+                print("WindowManager: Note window for URL \(url.lastPathComponent) already open, bringing to front.")
+                return
+            }
+        }
 
         // Attempt to read the content from the URL
         var noteContent: String
@@ -155,6 +161,7 @@ class WindowManager: NSObject, NSWindowDelegate {
         let hostingView = NoFocusRingHostingView(rootView: noteView)
         newWindow.contentView = hostingView
         newWindow.delegate = self
+        newWindow.representedURL = url
 
         openWindows.append(newWindow)
         newWindow.makeKeyAndOrderFront(nil)
@@ -421,7 +428,9 @@ struct NoteView: View {
                 .ignoresSafeArea()
             
             // Use TextEditor for a multi-line editable text area
-            TextEditor(text: $noteText)
+            SwiftDownEditor(text: $noteText)
+                .insetsSize(10)
+                .theme(Theme.BuiltIn.defaultClear.theme())
                 .scrollContentBackground(.hidden) // Hide the default background
                 .background(.clear) // Make TextEditor background transparent
                 .font(.system(size: 14)) // Set a nice font size

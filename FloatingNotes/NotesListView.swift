@@ -173,8 +173,8 @@ struct NotesListView: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
                 
-                // Example subtitle - you can customize this
-                Text("Opened recently \u{2022} \(note.url.lastPathComponent.count) Characters")
+                // Subtitle with actual last open date and character count
+                Text(subtitleText(for: note))
                     .font(.caption) // Changed from subheadline to caption for more compact display
                     .foregroundColor(.secondary)
                     .lineLimit(1)
@@ -279,6 +279,24 @@ struct NotesListView: View {
         // For now, let's assume WindowManager has a method to open a note by URL
         // This is a conceptual call; the actual method needs to be implemented in WindowManager.
         windowManager.openNoteFromURL(url: note.url)
+    }
+
+    // Helper to generate subtitle text with actual last open date and word count
+    private func subtitleText(for note: NoteItem) -> String {
+        let wordCount = note.wordCount
+        guard let lastModified = note.lastModified else {
+            return "\(wordCount) Words"
+        }
+        let isRecent = lastModified > Date().addingTimeInterval(-86400)
+        let dateString: String
+        if isRecent {
+            dateString = "Recently"
+        } else {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "d MMM yyyy"
+            dateString = formatter.string(from: lastModified)
+        }
+        return "\(dateString) \u{2022} \(wordCount) Words"
     }
 }
 

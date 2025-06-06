@@ -268,21 +268,29 @@ class NotesManager: ObservableObject {
                     let titleComponents = components.dropLast()
                     let title = titleComponents.isEmpty ? "Untitled Note" : titleComponents.joined(separator: "_")
 
-
                     let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
                     let modificationDate = attributes[.modificationDate] as? Date
+
+                    // Compute word count of the note's content
+                    let wordCount: Int = {
+                        guard let content = try? String(contentsOf: url, encoding: .utf8) else {
+                            return 0
+                        }
+                        let words = content.split { $0.isWhitespace || $0.isNewline }
+                        return words.count
+                    }()
 
                     if let uuid = UUID(uuidString: idString) {
                          // Check if the file name actually ends with the UUID string, ensuring correct parsing
                         if baseFilename.hasSuffix("_\(idString)") {
                              let isPinned = pinnedIDs.contains(uuid.uuidString)
-                            loadedNotes.append(NoteItem(id: uuid, title: title, url: url, isPinned: isPinned, lastModified: modificationDate))
+                            loadedNotes.append(NoteItem(id: uuid, title: title, url: url, isPinned: isPinned, lastModified: modificationDate, wordCount: wordCount))
                         } else {
                              // Fallback for files that don't end with a valid UUID format but might contain underscores
                             print("Filename \(filename) does not end with a valid UUID format after underscore. Using full filename as title and new UUID.")
                             let fallbackTitle = baseFilename // Use the whole filename as title if UUID is not at the end
                              // Generate a new UUID for the NoteItem instance, but it won't match the filename for persistence
-                            loadedNotes.append(NoteItem(id: UUID(), title: fallbackTitle, url: url, isPinned: false, lastModified: modificationDate))
+                            loadedNotes.append(NoteItem(id: UUID(), title: fallbackTitle, url: url, isPinned: false, lastModified: modificationDate, wordCount: wordCount))
                         }
 
                     } else {
@@ -290,7 +298,7 @@ class NotesManager: ObservableObject {
                         print("Last component '\(idString)' in filename '\(filename)' is not a valid UUID. Using full filename as title and new UUID.")
                         let fallbackTitle = baseFilename // Use the whole filename as title
                         // Generate a new UUID for the NoteItem instance
-                        loadedNotes.append(NoteItem(id: UUID(), title: fallbackTitle, url: url, isPinned: false, lastModified: modificationDate))
+                        loadedNotes.append(NoteItem(id: UUID(), title: fallbackTitle, url: url, isPinned: false, lastModified: modificationDate, wordCount: wordCount))
                     }
                 }
             }

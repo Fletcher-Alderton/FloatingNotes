@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		5A2A5AAD2DE2F7BF00A47A12 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 5A2A5AAC2DE2F7BF00A47A12 /* KeyboardShortcuts */; };
+		5AAF6EEF2DF2DC8400AF5A9A /* SwiftDown in Frameworks */ = {isa = PBXBuildFile; productRef = 5AAF6EEE2DF2DC8400AF5A9A /* SwiftDown */; };
+		5AAF6EF22DF2EA3500AF5A9A /* SwiftDown in Frameworks */ = {isa = PBXBuildFile; productRef = 5AAF6EF12DF2EA3500AF5A9A /* SwiftDown */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -61,7 +63,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5AAF6EEF2DF2DC8400AF5A9A /* SwiftDown in Frameworks */,
 				5A2A5AAD2DE2F7BF00A47A12 /* KeyboardShortcuts in Frameworks */,
+				5AAF6EF22DF2EA3500AF5A9A /* SwiftDown in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -125,6 +129,8 @@
 			name = FloatingNotes;
 			packageProductDependencies = (
 				5A2A5AAC2DE2F7BF00A47A12 /* KeyboardShortcuts */,
+				5AAF6EEE2DF2DC8400AF5A9A /* SwiftDown */,
+				5AAF6EF12DF2EA3500AF5A9A /* SwiftDown */,
 			);
 			productName = FloatingNotes;
 			productReference = 5A2A5A5D2DE1B43100A47A12 /* FloatingNotes.app */;
@@ -184,7 +190,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1630;
-				LastUpgradeCheck = 1630;
+				LastUpgradeCheck = 1640;
 				TargetAttributes = {
 					5A2A5A5C2DE1B43100A47A12 = {
 						CreatedOnToolsVersion = 16.3;
@@ -210,6 +216,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				5A2A5AAB2DE2F5DC00A47A12 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
+				5AAF6EF02DF2EA3500AF5A9A /* XCLocalSwiftPackageReference "../SwiftDown" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 5A2A5A5E2DE1B43100A47A12 /* Products */;
@@ -319,6 +326,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -382,6 +390,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -413,6 +422,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Floating Notes";
@@ -443,6 +453,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Floating Notes";
@@ -469,6 +480,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.4;
 				MARKETING_VERSION = 1.0;
@@ -486,6 +498,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.4;
 				MARKETING_VERSION = 1.0;
@@ -502,6 +515,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = FletcherAlderton.FloatingNotesUITests;
@@ -517,6 +531,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = FletcherAlderton.FloatingNotesUITests;
@@ -568,6 +583,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		5AAF6EF02DF2EA3500AF5A9A /* XCLocalSwiftPackageReference "../SwiftDown" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SwiftDown;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		5A2A5AAB2DE2F5DC00A47A12 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -584,6 +606,14 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 5A2A5AAB2DE2F5DC00A47A12 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
 			productName = KeyboardShortcuts;
+		};
+		5AAF6EEE2DF2DC8400AF5A9A /* SwiftDown */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SwiftDown;
+		};
+		5AAF6EF12DF2EA3500AF5A9A /* SwiftDown */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SwiftDown;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

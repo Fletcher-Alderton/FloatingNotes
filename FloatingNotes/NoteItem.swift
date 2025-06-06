@@ -6,13 +6,15 @@ class NoteItem: Identifiable, Hashable, ObservableObject {
     let url: URL
     @Published var isPinned: Bool = false
     var lastModified: Date? // Optional: for sorting or display
+    var wordCount: Int // Total word count of the note's content
 
-    init(id: UUID, title: String, url: URL, isPinned: Bool = false, lastModified: Date? = nil) {
+    init(id: UUID, title: String, url: URL, isPinned: Bool = false, lastModified: Date? = nil, wordCount: Int = 0) {
         self.id = id
         self.title = title
         self.url = url
         self.isPinned = isPinned
         self.lastModified = lastModified
+        self.wordCount = wordCount
     }
 
     // Implement Hashable
