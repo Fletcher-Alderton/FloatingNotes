@@ -27,11 +27,9 @@ A lightweight, elegant macOS app for quick note-taking with floating, transparen
 - **Notes list view** with search and organization
 - **Custom storage locations** - choose where your notes are saved
 
-### ⌨️ Keyboard-First Experience
-- **Immediate text input** - start typing as soon as a window opens
-- **Customizable keyboard shortcuts**
-- **Focus management** for seamless navigation
-- **Rich text editing** with markdown formatting
+### Intergrations
+- **Use with racast to replace raycast notes** - [Guide here] (./FloatingNotes/Raycast.md)
+- **Store notes in obsidain** - [Guide here] (./FloatingNotes/Obsidian.md)
 
 ## 🚀 Getting Started
 
@@ -63,19 +61,16 @@ FloatingNotes supports URL schemes for automation and integration with other app
 
 ### Create New Note
 ```
-floatingnotes://new
 floatingnotes://create
 ```
 
 ### Create Note with Content
 ```
-floatingnotes://new?text=Your%20note%20content
 floatingnotes://create?content=Your%20note%20content
 ```
 
 ### Open Recent Note
 ```
-floatingnotes://recent
 floatingnotes://last
 ```
 
@@ -102,30 +97,10 @@ Access settings through the menu bar icon or the application menu:
 - **Custom key combinations** for all actions
 - **Real-time shortcut testing**
 
-## 🏗️ Technical Features
-
-### Window Management
-- **NSWindow-based** floating windows with proper focus handling
-- **Visual effect blur** using NSVisualEffectView
-- **Memory efficient** window lifecycle management
-- **Multi-window support** with intelligent positioning
-
-### Data Persistence
-- **Automatic saving** as you type
-- **File-based storage** with standard text files
-- **Markdown support** with SwiftDown integration
-- **Robust file management** with error handling
-
-### User Experience
-- **Immediate focus** on new windows
-- **Seamless transparency** that doesn't interfere with desktop
-- **Smart window behavior** across multiple displays
-- **Accessibility support** with proper focus management
-
 ## 🛠️ Development
 
 ### Requirements
-- macOS 11.0+
+- macOS 14.0+
 - Xcode 13.0+
 - Swift 5.5+
 
@@ -145,7 +120,7 @@ FloatingNotes/
 ├── SettingsView.swift              # Settings interface
 ├── NotesListView.swift             # Notes browser
 ├── MenuBarManager.swift            # Menu bar integration
-└── Supporting Files/
+└── Supporting/
     ├── KeyboardShortcutNames.swift
     ├── MenuCommands.swift
     └── AppDisplayManager.swift
@@ -155,13 +130,6 @@ FloatingNotes/
 1. Clone the repository
 2. Open `FloatingNotes.xcodeproj` in Xcode
 3. Build and run (⌘R)
-
-## 📖 Guides
-
-The project includes detailed implementation guides:
-
-- **[Transparent Blurry Windows Guide](TransparentBlurryWindows_Guide.md)** - Complete implementation details for creating beautiful transparent windows
-- **[Window Focus Guide](WindowFocus_Guide.md)** - Comprehensive focus management techniques
 
 ## 🤝 Contributing
 
@@ -182,7 +150,7 @@ This project is available under the MIT License. See LICENSE file for details.
 
 - Built with ❤️ for the macOS community
 - Inspired by the need for seamless, non-intrusive note-taking
-- Special thanks to the SwiftUI and AppKit communities
+- Special thanks to the SwiftUI and AppKit communities 
 
 ---
 
