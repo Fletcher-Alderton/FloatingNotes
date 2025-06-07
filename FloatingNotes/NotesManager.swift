@@ -295,7 +295,7 @@ class NotesManager: ObservableObject {
         saveNotesIndex(index)
     }
     
-    private func removeNoteFromIndex(filename: String) {
+    func removeNoteFromIndex(filename: String) {
         var index = loadNotesIndex()
         if let metadata = index.notes[filename] {
             index.uuidToFilename.removeValue(forKey: metadata.uuid)

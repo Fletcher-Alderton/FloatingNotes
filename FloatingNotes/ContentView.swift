@@ -609,8 +609,15 @@ struct NoteView: View {
     private func saveNoteToFile() {
         // Check if the note has any content (non-whitespace text)
         let trimmedText = noteText.trimmingCharacters(in: .whitespacesAndNewlines)
+        
         if trimmedText.isEmpty {
-            print("NoteView: Note is empty, skipping save")
+            print("NoteView: Note is empty")
+            
+            // If this is an existing note that became empty, delete it
+            if let currentURL = sourceURL {
+                deleteEmptyNote(at: currentURL)
+            }
+            // For new notes, just don't create anything
             return
         }
         
@@ -638,6 +645,31 @@ struct NoteView: View {
                     print("NoteView: CRITICAL - Error saving existing note to '\(currentURL.path)': \(error)")
                 }
             }
+        }
+    }
+    
+    private func deleteEmptyNote(at url: URL) {
+        do {
+            // Remove the file
+            try FileManager.default.removeItem(at: url)
+            
+            // Remove from NotesManager index
+            let filename = url.lastPathComponent
+            NotesManager.shared.removeNoteFromIndex(filename: filename)
+            
+            // Clear the sourceURL since the file no longer exists
+            sourceURL = nil
+            lastSavedFilenameComponent = nil
+            
+            print("NoteView: Deleted empty note: \(filename)")
+            
+            // Close the window since the note no longer exists
+            DispatchQueue.main.async {
+                self.window?.close()
+            }
+            
+        } catch {
+            print("NoteView: Error deleting empty note '\(url.lastPathComponent)': \(error)")
         }
     }
 
