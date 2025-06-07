@@ -28,8 +28,8 @@ A lightweight, elegant macOS app for quick note-taking with floating, transparen
 - **Custom storage locations** - choose where your notes are saved
 
 ### Intergrations
-- **Use with racast to replace raycast notes** - [Guide here] (./FloatingNotes/Raycast.md)
-- **Store notes in obsidain** - [Guide here] (./FloatingNotes/Obsidian.md)
+- **Use with Raycast to replace Raycast notes** - [Guide here](./FloatingNotes/Raycast.md)
+- **Store notes in Obsidian** - [Guide here](./FloatingNotes/Obsidian.md)
 
 ## 🚀 Getting Started
 
