@@ -1,12 +1,12 @@
 # How to use Floating Notes with Obsidian
 
-Integrate FloatingNotes with your Obsidian vault to create a seamless note-taking experience where your floating notes automatically appear in Obsidian.
+Integrate Floating Notes with your Obsidian vault to create a seamless note-taking experience where your floating notes automatically appear in Obsidian.
 
 ## 🎯 Overview
 
-By changing FloatingNotes' storage location to your Obsidian vault folder, all notes created with FloatingNotes will automatically sync with Obsidian. This allows you to:
+By changing Floating Notes' storage location to your Obsidian vault folder, all notes created with Floating Notes will automatically sync with Obsidian. This allows you to:
 
-- **Create quick notes** with FloatingNotes that instantly appear in Obsidian
+- **Create quick notes** with Floating Notes that instantly appear in Obsidian
 - **Edit notes in either app** - changes sync automatically since they're the same files
 - **Leverage Obsidian's features** like linking, tags, and plugins on your floating notes
 - **Maintain your Obsidian workflow** while gaining quick access to floating notes
@@ -22,10 +22,10 @@ By changing FloatingNotes' storage location to your Obsidian vault folder, all n
 
 *Alternative method: In Obsidian, go to Settings → About → Show debug info to see your vault path*
 
-## ⚙️ Step 2: Configure FloatingNotes Storage
+## ⚙️ Step 2: Configure Floating Notes Storage
 
-1. **Open FloatingNotes Settings**
-   - Click the FloatingNotes menu bar icon → Settings
+1. **Open Floating Notes Settings**
+   - Click the Floating Notes menu bar icon → Settings
    - Or use the keyboard shortcut (Command + ,)
 
 2. **Navigate to Storage Settings**
@@ -38,15 +38,15 @@ By changing FloatingNotes' storage location to your Obsidian vault folder, all n
    - Select the vault folder
 
 4. **Migration Options**
-   - **Migrate existing notes**: Move your current FloatingNotes to Obsidian vault
+   - **Migrate existing notes**: Move your current Floating Notes to Obsidian vault
    - **Change without migrating**: Only new notes will be stored in Obsidian
 
 ## 📝 Step 3: Optional Folder Organization
 
-For better organization, you can create a subfolder in your Obsidian vault specifically for FloatingNotes:
+For better organization, you can create a subfolder in your Obsidian vault specifically for Floating Notes:
 
 1. **Create a "Quick Notes" folder** in your Obsidian vault
-2. **Set this subfolder** as your FloatingNotes storage location
+2. **Set this subfolder** as your Floating Notes storage location
 3. **Benefits**:
    - Keeps floating notes organized
    - Easy to distinguish from other Obsidian notes
@@ -57,16 +57,16 @@ For better organization, you can create a subfolder in your Obsidian vault speci
 Once configured:
 
 ### Creating Notes
-- **FloatingNotes**: Create floating notes as usual - they'll appear in your Obsidian vault instantly
-- **Obsidian**: Create notes in Obsidian - if in the FloatingNotes folder, you can open them as floating windows
+- **Floating Notes**: Create floating notes as usual - they'll appear in your Obsidian vault instantly
+- **Obsidian**: Create notes in Obsidian - if in the Floating Notes folder, you can open them as floating windows
 
 ### Editing Notes
 - **Real-time sync**: Edit in either app, changes appear immediately in the other
 - **No conflicts**: Both apps work with the same markdown files
-- **Auto-save**: FloatingNotes auto-saves, so changes appear in Obsidian instantly
+- **Auto-save**: Floating Notes auto-saves, so changes appear in Obsidian instantly
 
 ### File Format
-- **Pure markdown**: FloatingNotes uses standard `.md` files
+- **Pure markdown**: Floating Notes uses standard `.md` files
 - **Compatible**: Works perfectly with Obsidian's markdown parser
 - **Metadata**: Obsidian's frontmatter is preserved
 
@@ -86,7 +86,7 @@ Once configured:
 - **Periodic Notes**: Integrate with daily/weekly note workflows
 
 ### Workflow Ideas
-1. **Quick Capture**: Use FloatingNotes for immediate thoughts, expand in Obsidian later
+1. **Quick Capture**: Use Floating Notes for immediate thoughts, expand in Obsidian later
 2. **Meeting Notes**: Float meeting notes during calls, organize in Obsidian afterward  
 3. **Research**: Collect quick research snippets, link them in Obsidian's knowledge graph
 4. **Writing Drafts**: Start writing in floating notes, develop into full documents in Obsidian
@@ -95,7 +95,7 @@ Once configured:
 
 ### Notes Not Appearing in Obsidian
 - **Refresh vault**: In Obsidian, press `Ctrl/Cmd + R` to refresh
-- **Check folder path**: Ensure FloatingNotes is saving to the correct vault folder
+- **Check folder path**: Ensure Floating Notes is saving to the correct vault folder
 - **File permissions**: Make sure Obsidian has read access to the folder
 
 ### Sync Delays
@@ -110,7 +110,7 @@ Once configured:
 
 ## 🎉 You're All Set!
 
-Your FloatingNotes now integrate seamlessly with Obsidian! You can:
+Your Floating Notes now integrate seamlessly with Obsidian! You can:
 
 ✅ Create quick floating notes that appear in your vault  
 ✅ Edit notes in either app with real-time sync  

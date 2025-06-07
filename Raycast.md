@@ -1,15 +1,15 @@
 # How to use Floating Notes with Raycast
 
-Replace Raycast's built-in notes with FloatingNotes for a superior floating note-taking experience that integrates seamlessly with your Raycast workflow.
+Replace Raycast's built-in notes with Floating Notes for a superior floating note-taking experience that integrates seamlessly with your Raycast workflow.
 
 ## 🎯 Overview
 
-By setting up Raycast quicklinks with FloatingNotes' URL schemes, you can:
+By setting up Raycast quicklinks with Floating Notes' URL schemes, you can:
 
 - **Replace Raycast Notes** with beautiful floating transparent windows
 - **Create notes instantly** from Raycast with a simple command
 - **Open recent notes** quickly without leaving your current workflow
-- **Maintain Raycast's speed** while gaining FloatingNotes' superior UI
+- **Maintain Raycast's speed** while gaining Floating Notes' superior UI
 - **Create notes with content** by passing text directly from Raycast
 
 ## 🚀 Step 1: Open Raycast Settings
@@ -85,7 +85,7 @@ Once set up, you can:
 
 ## 🔗 Available URL Schemes
 
-FloatingNotes supports these URL schemes for Raycast integration:
+Floating Notes supports these URL schemes for Raycast integration:
 
 | URL Scheme | Purpose | Example |
 |------------|---------|---------|
@@ -110,7 +110,7 @@ floatingnotes://create?content=Meeting:%20%0A%0ADate:%20{date}%0AAttendees:%20%0
 ```
 
 ### Raycast Scripts Integration
-Create Raycast scripts that use FloatingNotes URL schemes:
+Create Raycast scripts that use Floating Notes URL schemes:
 
 ```bash
 #!/bin/bash
@@ -125,7 +125,7 @@ open "floatingnotes://create?content=$encoded_content"
 ```
 
 ### Workflow Ideas
-1. **Replace Raycast Notes**: Disable Raycast's built-in notes and use FloatingNotes instead
+1. **Replace Raycast Notes**: Disable Raycast's built-in notes and use Floating Notes instead
 2. **Meeting Workflow**: Create pre-formatted meeting notes from Raycast
 3. **Quick Capture**: Instantly capture thoughts without breaking focus
 4. **Todo Management**: Create quick todo lists that float above your work
@@ -136,8 +136,8 @@ If you're currently using Raycast's built-in notes:
 
 1. **Export existing Raycast notes** (if you have important content)
 2. **Disable Raycast Notes extension** in Extensions settings
-3. **Set up FloatingNotes quicklinks** as described above
-4. **Import content** to FloatingNotes manually or via copy-paste
+3. **Set up Floating Notes quicklinks** as described above
+4. **Import content** to Floating Notes manually or via copy-paste
 
 ## 🔧 Troubleshooting
 
@@ -146,8 +146,8 @@ If you're currently using Raycast's built-in notes:
 - **Test in browser**: Try pasting the URL in Safari to test
 - **Restart Raycast**: Sometimes a restart helps refresh extensions
 
-### FloatingNotes Not Opening
-- **Verify app is installed**: Make sure FloatingNotes is in Applications folder
+### Floating Notes Not Opening
+- **Verify app is installed**: Make sure Floating Notes is in Applications folder
 - **Check permissions**: macOS might require permission for URL scheme handling
 - **Test manually**: Try the URL scheme in Terminal: `open "floatingnotes://create"`
 
@@ -158,7 +158,7 @@ If you're currently using Raycast's built-in notes:
 
 ## 🎉 You're All Set!
 
-Your Raycast now integrates perfectly with FloatingNotes! You can:
+Your Raycast now integrates perfectly with Floating Notes! You can:
 
 ✅ Create floating notes instantly from Raycast  
 ✅ Open recent notes with a quick command  
@@ -169,4 +169,4 @@ Your Raycast now integrates perfectly with FloatingNotes! You can:
 
 ---
 
-*Pro tip: Consider setting up keyboard shortcuts in FloatingNotes settings for even faster access outside of Raycast!*
+*Pro tip: Consider setting up keyboard shortcuts in Floating Notes settings for even faster access outside of Raycast!*

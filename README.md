@@ -1,4 +1,4 @@
-# FloatingNotes
+# Floating Notes
 
 A lightweight, elegant macOS app for quick note-taking with floating, transparent windows that integrate seamlessly with your desktop workflow.
 
@@ -31,6 +31,11 @@ A lightweight, elegant macOS app for quick note-taking with floating, transparen
 - **Use with Raycast to replace Raycast notes** - [Guide here](./Raycast.md)
 - **Store notes in Obsidian** - [Guide here](./Obsidian.md)
 
+## 📸 Screenshots
+
+![Example Screenshot](./example.jpeg)
+
+
 ## 🚀 Getting Started
 
 ### Installation
@@ -41,7 +46,7 @@ A lightweight, elegant macOS app for quick note-taking with floating, transparen
 
 ### First Launch
 
-On first launch, FloatingNotes will:
+On first launch, Floating Notes will:
 - Create a notes directory in `~/Documents/FloatingNotesApp/`
 - Set up default keyboard shortcuts
 - Display your first floating note window
@@ -57,7 +62,7 @@ On first launch, FloatingNotes will:
 
 ## 🔗 URL Scheme Integration
 
-FloatingNotes supports URL schemes for automation and integration with other apps:
+Floating Notes supports URL schemes for automation and integration with other apps:
 
 ### Create New Note
 ```
@@ -154,4 +159,4 @@ This project is available under the MIT License. See LICENSE file for details.
 
 ---
 
-**FloatingNotes** - Where your thoughts float freely on your desktop ✨ 
+**Floating Notes** - Where your thoughts float freely on your desktop ✨ 
