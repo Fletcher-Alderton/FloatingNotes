@@ -2,9 +2,6 @@ import SwiftUI
 import AppKit
 import SwiftDown
 
-// TODO:
-// - Replace the settings link with a pin button that will enable (canJoinAllSpaces) or disable (canJoinAllSpaces) the window to follow the user across spaces.
-
 // Custom NSHostingView that disables focus ring
 class NoFocusRingHostingView<Content: View>: NSHostingView<Content> {
     override var focusRingType: NSFocusRingType {
@@ -383,15 +380,14 @@ struct NoteView: View {
         self._sourceURL = State(initialValue: sourceURL)
         self._isPinned = State(initialValue: UserDefaults.standard.object(forKey: "defaultIsPinned") as? Bool ?? true)
 
-        // Attempt to parse UUID from filename if sourceURL is provided
+        // Get UUID from NotesManager index instead of parsing filename
         if let url = sourceURL,
-           let lastPathComponent = url.lastPathComponent.components(separatedBy: ".md").first,
-           let uuidString = lastPathComponent.split(separator: "_").last,
-           let uuid = UUID(uuidString: String(uuidString)) {
+           let uuid = NotesManager.shared.getUUIDForFilename(url.lastPathComponent) {
             self.noteID = uuid
-            self.lastSavedFilenameComponent = url.lastPathComponent // Keep track of the original filename
+            self.lastSavedFilenameComponent = url.lastPathComponent
         } else {
-            self.noteID = UUID() // Fallback to new UUID if parsing fails
+            // Fallback to new UUID if not found in index
+            self.noteID = UUID()
         }
         print("NoteView init (from URL): self.window is nil? \(self.window == nil), noteID: \(self.noteID), sourceURL: \(sourceURL?.absoluteString ?? "nil")")
     }
@@ -530,9 +526,21 @@ struct NoteView: View {
             window?.close()
             print("NoteView onExitCommand: Window closed")
         }
-        .onChange(of: noteText) {
+        .onChange(of: noteText) { oldValue, newValue in
             self.updateTitleBasedOnText()
             self.saveNoteToFile() // Save content whenever text changes
+            
+            // Check if user moved to next line (added newline) and we have an existing note
+            if sourceURL != nil {
+                let oldLineCount = oldValue.components(separatedBy: .newlines).count
+                let newLineCount = newValue.components(separatedBy: .newlines).count
+                
+                if newLineCount > oldLineCount {
+                    // User pressed Enter, update filename to match first line
+                    updateFilenameForCurrentNote()
+                }
+            }
+            
             if isAutoSizingEnabled && !hasUserManuallyResized {
                 adjustWindowSizeForText()
             }
@@ -606,59 +614,115 @@ struct NoteView: View {
             return
         }
         
-        let notesDirectory = getAppNotesDirectory()
-
-        let currentFirstLine = noteText.components(separatedBy: .newlines).first?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let titleForFilename = currentFirstLine.isEmpty ? "Untitled Note" : currentFirstLine
-        
-        let sanitizedTitlePart = sanitizeFilenameString(titleForFilename)
-        // Use the existing noteID for the filename to ensure consistency
-        let newFilenameComponent = "\(sanitizedTitlePart)_\(noteID.uuidString).md"
-        let newFileURL = notesDirectory.appendingPathComponent(newFilenameComponent)
-
-        // If a sourceURL exists and its last path component is different from newFilenameComponent,
-        // it means the note was opened from a file and its title (first line) has changed.
-        // In this case, the old file (from sourceURL) should be deleted after saving the new one.
-        var oldFileURLToDelete: URL? = nil
-        if let srcURL = sourceURL, srcURL.lastPathComponent != newFilenameComponent {
-            oldFileURLToDelete = srcURL
-        } else if let oldFilename = lastSavedFilenameComponent, oldFilename != newFilenameComponent {
-            // This handles the case where a new note (no sourceURL) is renamed
-            // or an opened note is renamed multiple times.
-            oldFileURLToDelete = notesDirectory.appendingPathComponent(oldFilename)
-        }
-
-        // Save the current note text to the new file
-        do {
-            try noteText.write(to: newFileURL, atomically: true, encoding: .utf8)
-            lastSavedFilenameComponent = newFilenameComponent // Update the record of the last saved filename
-            // If this note was opened from a URL, update its sourceURL to the new file URL
-            // This is important if the note is renamed multiple times.
-            if self.sourceURL != nil {
-                self.sourceURL = newFileURL
-            }
-            print("NoteView: Saved note to \(newFileURL.path)")
-
-            // After successful save, delete the old file if applicable
-            if let oldURL = oldFileURLToDelete {
-                if FileManager.default.fileExists(atPath: oldURL.path) {
-                    do {
-                        try FileManager.default.removeItem(at: oldURL)
-                        print("NoteView: Removed old file: \(oldURL.lastPathComponent)")
-                    } catch {
-                        print("NoteView: Error removing old file '\(oldURL.lastPathComponent)': \(error).")
-                        // Log error, but don't let it block the main functionality.
-                    }
+        // For new notes (no sourceURL), use NotesManager to create with "Untitled Note" filename
+        if sourceURL == nil {
+            if let newURL = NotesManager.shared.createNewNote() {
+                // Write content to the new file
+                do {
+                    try noteText.write(to: newURL, atomically: true, encoding: .utf8)
+                    sourceURL = newURL
+                    lastSavedFilenameComponent = newURL.lastPathComponent
+                    print("NoteView: Created new note at \(newURL.path)")
+                } catch {
+                    print("NoteView: CRITICAL - Error writing to new note file '\(newURL.path)': \(error)")
                 }
             }
-        } catch {
-            print("NoteView: CRITICAL - Error saving note to '\(newFileURL.path)': \(error)")
+        } else {
+            // For existing notes, just save to the current file
+            // The filename update will be handled by NotesManager when user leaves first line
+            if let currentURL = sourceURL {
+                do {
+                    try noteText.write(to: currentURL, atomically: true, encoding: .utf8)
+                    print("NoteView: Saved existing note to \(currentURL.path)")
+                } catch {
+                    print("NoteView: CRITICAL - Error saving existing note to '\(currentURL.path)': \(error)")
+                }
+            }
         }
     }
 
     // Helper to get the app's documents directory + app-specific subfolder
     private func getAppNotesDirectory() -> URL {
         return WindowManager.getAppNotesDirectory()
+    }
+    
+    // Helper to find the NoteItem for the current note
+    private func findNoteItemForCurrentNote() -> NoteItem? {
+        return NotesManager.shared.notes.first { $0.id == noteID }
+    }
+    
+    // Update filename for current note without needing to find it in the notes array
+    private func updateFilenameForCurrentNote() {
+        guard let currentURL = sourceURL else { return }
+        
+        let currentFilename = currentURL.lastPathComponent
+        
+        // Extract title from current content
+        let firstLine = noteText.components(separatedBy: .newlines).first?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let newTitle = firstLine.isEmpty ? "Untitled Note" : firstLine
+        
+        // Clean the title for filename use
+        let cleanTitle = cleanTitleForFilename(newTitle)
+        let expectedFilename = "\(cleanTitle).md"
+        
+        // Check if filename should change
+        guard currentFilename != expectedFilename else { return }
+        
+        // Handle filename conflicts
+        let notesDirectory = getAppNotesDirectory()
+        var finalFilename = expectedFilename
+        var finalURL = notesDirectory.appendingPathComponent(finalFilename)
+        var counter = 1
+        
+        while FileManager.default.fileExists(atPath: finalURL.path) && finalURL != currentURL {
+            finalFilename = "\(cleanTitle) \(counter).md"
+            finalURL = notesDirectory.appendingPathComponent(finalFilename)
+            counter += 1
+        }
+        
+        // Perform the rename
+        do {
+            try FileManager.default.moveItem(at: currentURL, to: finalURL)
+            
+            // Update the index in NotesManager
+            NotesManager.shared.updateFilenameInIndex(oldFilename: currentFilename, newFilename: finalFilename)
+            
+            // Update our sourceURL
+            sourceURL = finalURL
+            
+            print("ContentView: Renamed note: \(currentFilename) -> \(finalFilename)")
+            
+        } catch {
+            print("ContentView: Error renaming note from \(currentFilename) to \(finalFilename): \(error)")
+        }
+    }
+    
+    // Clean title for filename (similar to NotesManager's logic but simplified)
+    private func cleanTitleForFilename(_ title: String) -> String {
+        var cleanTitle = title
+        
+        // Remove markdown headers
+        if cleanTitle.hasPrefix("#") {
+            cleanTitle = cleanTitle.replacingOccurrences(of: "^#+\\s*", with: "", options: .regularExpression)
+        }
+        
+        // Remove markdown bold and italic
+        cleanTitle = cleanTitle.replacingOccurrences(of: "\\*\\*(.*?)\\*\\*", with: "$1", options: .regularExpression)
+        cleanTitle = cleanTitle.replacingOccurrences(of: "(?<!\\*)\\*([^*]+)\\*(?!\\*)", with: "$1", options: .regularExpression)
+        
+        // Remove invalid filename characters
+        let invalidChars = CharacterSet(charactersIn: ":/\\?%*|\"<>")
+        let cleaned = cleanTitle.components(separatedBy: invalidChars).joined(separator: "_")
+        
+        // Trim and limit length
+        let trimmed = cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
+        let maxLength = 100
+        
+        if trimmed.count > maxLength {
+            return String(trimmed.prefix(maxLength)).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        
+        return trimmed.isEmpty ? "Untitled Note" : trimmed
     }
 
     // Helper to sanitize a string for use in a filename

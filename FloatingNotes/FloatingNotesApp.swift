@@ -157,6 +157,8 @@ class URLHandler: ObservableObject {
 
 // AppDelegate to manage application lifecycle events
 class AppDelegate: NSObject, NSApplicationDelegate {
+    private var hasProcessedURLOnLaunch = false
+    
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Initialize keyboard shortcut manager
         _ = KeyboardShortcutManager.shared
@@ -164,9 +166,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Initialize app display manager (dock vs menu bar)
         AppDisplayManager.shared.initialize()
         
-        // Open the last note when the app finishes launching, or create a new one if no notes exist
-        WindowManager.shared.openLastNoteOrCreateNew()
-        print("AppDelegate: applicationDidFinishLaunching - Opening last note or creating new one.")
+        // Delay opening the last note to allow URL handling to occur first
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            // Only open the last note if no URL was processed during launch
+            if !self.hasProcessedURLOnLaunch {
+                WindowManager.shared.openLastNoteOrCreateNew()
+                print("AppDelegate: applicationDidFinishLaunching - Opening last note or creating new one.")
+            } else {
+                print("AppDelegate: applicationDidFinishLaunching - Skipped opening last note because URL was processed.")
+            }
+        }
     }
 
     // Optional: Handle app reactivation (e.g., clicking the dock icon)
@@ -183,6 +192,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     // Handle URL schemes
     func application(_ application: NSApplication, open urls: [URL]) {
+        hasProcessedURLOnLaunch = true
         for url in urls {
             URLHandler.shared.handleURL(url)
         }
@@ -226,7 +236,3 @@ struct FloatingNotesApp: App {
         }
     }
 }
-
-// The ContentView helper struct and WindowAccessor are no longer needed here
-// as WindowManager directly creates NSWindow and NoteView instances.
-// They were previously used to get the NSWindow reference for the initial window.

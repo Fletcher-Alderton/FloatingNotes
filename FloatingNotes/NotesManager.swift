@@ -9,6 +9,7 @@ class NotesManager: ObservableObject {
     private let customNotesDirectoryKey = "customNotesDirectory" // UserDefaults key for custom directory
     private let directoryBookmarkKey = "directoryBookmark" // UserDefaults key for security-scoped bookmark
     private var currentSecurityScopedURL: URL? // Track currently accessed security-scoped URL
+    private let indexFileName = "notes_index.json" // Index file name
 
     private init() {
         loadNotes()
@@ -242,10 +243,97 @@ class NotesManager: ObservableObject {
         }
     }
 
+    // MARK: - Notes Index Management
+    
+    private struct NotesIndex: Codable {
+        var notes: [String: NoteMetadata] // filename -> metadata mapping
+        var uuidToFilename: [String: String] // uuid -> current filename mapping
+        var version: Int = 1
+    }
+    
+    private struct NoteMetadata: Codable {
+        let uuid: String
+        let createdDate: Date
+    }
+    
+    private func getIndexFileURL() -> URL {
+        return getAppNotesDirectory().appendingPathComponent(indexFileName)
+    }
+    
+    private func loadNotesIndex() -> NotesIndex {
+        let indexURL = getIndexFileURL()
+        
+        guard FileManager.default.fileExists(atPath: indexURL.path) else {
+            return NotesIndex(notes: [:], uuidToFilename: [:])
+        }
+        
+        do {
+            let data = try Data(contentsOf: indexURL)
+            return try JSONDecoder().decode(NotesIndex.self, from: data)
+        } catch {
+            print("Error loading notes index: \(error)")
+            return NotesIndex(notes: [:], uuidToFilename: [:])
+        }
+    }
+    
+    private func saveNotesIndex(_ index: NotesIndex) {
+        let indexURL = getIndexFileURL()
+        
+        do {
+            let data = try JSONEncoder().encode(index)
+            try data.write(to: indexURL)
+        } catch {
+            print("Error saving notes index: \(error)")
+        }
+    }
+    
+    private func addNoteToIndex(filename: String, uuid: UUID) {
+        var index = loadNotesIndex()
+        let metadata = NoteMetadata(uuid: uuid.uuidString, createdDate: Date())
+        index.notes[filename] = metadata
+        index.uuidToFilename[uuid.uuidString] = filename
+        saveNotesIndex(index)
+    }
+    
+    private func removeNoteFromIndex(filename: String) {
+        var index = loadNotesIndex()
+        if let metadata = index.notes[filename] {
+            index.uuidToFilename.removeValue(forKey: metadata.uuid)
+        }
+        index.notes.removeValue(forKey: filename)
+        saveNotesIndex(index)
+    }
+    
+    func updateFilenameInIndex(oldFilename: String, newFilename: String) {
+        var index = loadNotesIndex()
+        if let metadata = index.notes[oldFilename] {
+            // Move metadata to new filename
+            index.notes.removeValue(forKey: oldFilename)
+            index.notes[newFilename] = metadata
+            index.uuidToFilename[metadata.uuid] = newFilename
+            
+            saveNotesIndex(index)
+        }
+    }
+    
+    func getUUIDForFilename(_ filename: String) -> UUID? {
+        let index = loadNotesIndex()
+        guard let metadata = index.notes[filename] else { return nil }
+        return UUID(uuidString: metadata.uuid)
+    }
+    
+    func getFilenameForUUID(_ uuid: UUID) -> String? {
+        let index = loadNotesIndex()
+        return index.uuidToFilename[uuid.uuidString]
+    }
+    
+
+
     func loadNotes() {
         let notesDirectory = getAppNotesDirectory()
         var loadedNotes: [NoteItem] = []
         let pinnedIDs = UserDefaults.standard.array(forKey: pinnedNotesKey) as? [String] ?? []
+        let index = loadNotesIndex()
 
         do {
             let fileURLs = try FileManager.default.contentsOfDirectory(at: notesDirectory,
@@ -254,20 +342,12 @@ class NotesManager: ObservableObject {
             for url in fileURLs {
                 if url.pathExtension == "md" {
                     let filename = url.lastPathComponent
-                    // Handle potential underscores in the title correctly
-                    let baseFilename = filename.replacingOccurrences(of: ".md", with: "")
-                    let components = baseFilename.split(separator: "_")
                     
-                    // Ensure there's at least one component for the ID
-                    guard components.count > 0 else {
-                        print("Could not parse filename into components: \(filename)")
-                        continue // Skip this file if filename is empty or just ".md"
+                    // Skip the index file itself
+                    if filename == indexFileName {
+                        continue
                     }
-
-                    let idString = String(components.last!) // Get the last component as the potential UUID
-                    let titleComponents = components.dropLast()
-                    let title = titleComponents.isEmpty ? "Untitled Note" : titleComponents.joined(separator: "_")
-
+                    
                     let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
                     let modificationDate = attributes[.modificationDate] as? Date
 
@@ -279,32 +359,31 @@ class NotesManager: ObservableObject {
                         let words = content.split { $0.isWhitespace || $0.isNewline }
                         return words.count
                     }()
-
-                    if let uuid = UUID(uuidString: idString) {
-                         // Check if the file name actually ends with the UUID string, ensuring correct parsing
-                        if baseFilename.hasSuffix("_\(idString)") {
-                             let isPinned = pinnedIDs.contains(uuid.uuidString)
-                            loadedNotes.append(NoteItem(id: uuid, title: title, url: url, isPinned: isPinned, lastModified: modificationDate, wordCount: wordCount))
-                        } else {
-                             // Fallback for files that don't end with a valid UUID format but might contain underscores
-                            print("Filename \(filename) does not end with a valid UUID format after underscore. Using full filename as title and new UUID.")
-                            let fallbackTitle = baseFilename // Use the whole filename as title if UUID is not at the end
-                             // Generate a new UUID for the NoteItem instance, but it won't match the filename for persistence
-                            loadedNotes.append(NoteItem(id: UUID(), title: fallbackTitle, url: url, isPinned: false, lastModified: modificationDate, wordCount: wordCount))
-                        }
-
+                    
+                    // Get UUID from index, or create new one if not found
+                    let uuid: UUID
+                    
+                    if let metadata = index.notes[filename],
+                       let existingUUID = UUID(uuidString: metadata.uuid) {
+                        uuid = existingUUID
                     } else {
-                        // Handle cases where the last component is not a valid UUID
-                        print("Last component '\(idString)' in filename '\(filename)' is not a valid UUID. Using full filename as title and new UUID.")
-                        let fallbackTitle = baseFilename // Use the whole filename as title
-                        // Generate a new UUID for the NoteItem instance
-                        loadedNotes.append(NoteItem(id: UUID(), title: fallbackTitle, url: url, isPinned: false, lastModified: modificationDate, wordCount: wordCount))
+                        // File not in index, create new UUID and add to index
+                        uuid = UUID()
+                        addNoteToIndex(filename: filename, uuid: uuid)
+                        print("Added new note to index: \(filename) -> \(uuid.uuidString)")
                     }
+                    
+                    // Extract display title from content
+                    let displayTitle = extractTitleFromContent(url: url)
+                    
+                    let isPinned = pinnedIDs.contains(uuid.uuidString)
+                    loadedNotes.append(NoteItem(id: uuid, title: displayTitle, url: url, isPinned: isPinned, lastModified: modificationDate, wordCount: wordCount))
                 }
             }
         } catch {
             print("Error loading notes: \(error)")
         }
+        
         // The @Published property 'notes' will automatically notify observers when assigned
         self.notes = loadedNotes
     }
@@ -354,6 +433,11 @@ class NotesManager: ObservableObject {
     func deleteNote(note: NoteItem) {
         do {
             try FileManager.default.removeItem(at: note.url)
+            
+            // Remove from index
+            let filename = note.url.lastPathComponent
+            removeNoteFromIndex(filename: filename)
+            
             // Removing from the @Published notes array will automatically
             // notify observers and update the UI.
             notes.removeAll { $0.id == note.id }
@@ -372,4 +456,160 @@ class NotesManager: ObservableObject {
             // Optionally, show an alert to the user
         }
     }
+    
+    // MARK: - Helper methods for stable filename management
+    
+    private func extractTitleFromContent(url: URL) -> String {
+        guard let content = try? String(contentsOf: url, encoding: .utf8) else {
+            return "Untitled Note"
+        }
+        
+        // Get first non-empty line as title
+        let lines = content.components(separatedBy: .newlines)
+        for line in lines {
+            let trimmedLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmedLine.isEmpty {
+                // Remove basic markdown formatting from title (safer patterns)
+                var cleanTitle = trimmedLine
+                
+                // Remove markdown headers (# ## ###)
+                if cleanTitle.hasPrefix("#") {
+                    cleanTitle = cleanTitle.replacingOccurrences(of: "^#+\\s*", with: "", options: .regularExpression)
+                }
+                
+                // Remove markdown bold (**text**)
+                cleanTitle = cleanTitle.replacingOccurrences(of: "\\*\\*(.*?)\\*\\*", with: "$1", options: .regularExpression)
+                
+                // Remove markdown italic (*text*)
+                cleanTitle = cleanTitle.replacingOccurrences(of: "(?<!\\*)\\*([^*]+)\\*(?!\\*)", with: "$1", options: .regularExpression)
+                
+                cleanTitle = cleanTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+                
+
+                
+                return cleanTitle.isEmpty ? "Untitled Note" : cleanTitle
+            }
+        }
+        return "Untitled Note"
+    }
+    
+    private func sanitizeFilename(_ title: String) -> String {
+        // Remove or replace characters that are invalid in filenames
+        let invalidChars = CharacterSet(charactersIn: ":/\\?%*|\"<>")
+        let cleaned = title.components(separatedBy: invalidChars).joined(separator: "_")
+        
+        // Trim whitespace and limit length
+        let trimmed = cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
+        let maxLength = 100 // Reasonable filename length limit
+        
+        let final: String
+        if trimmed.count > maxLength {
+            final = String(trimmed.prefix(maxLength)).trimmingCharacters(in: .whitespacesAndNewlines)
+        } else {
+            final = trimmed.isEmpty ? "Untitled Note" : trimmed
+        }
+        
+        return final
+    }
+    
+    func createNewNote(initialTitle: String = "") -> URL? {
+        let notesDirectory = getAppNotesDirectory()
+        
+        // Always start with "Untitled Note" filename - will be renamed when user moves to next line
+        let baseFilename = "Untitled Note"
+        
+        // Handle filename conflicts for untitled notes
+        var filename = "\(baseFilename).md"
+        var noteURL = notesDirectory.appendingPathComponent(filename)
+        var counter = 1
+        
+        while FileManager.default.fileExists(atPath: noteURL.path) {
+            filename = "\(baseFilename) \(counter).md"
+            noteURL = notesDirectory.appendingPathComponent(filename)
+            counter += 1
+        }
+        
+        // Create new UUID for this note
+        let uuid = UUID()
+        
+        // Add to index first
+        addNoteToIndex(filename: filename, uuid: uuid)
+        
+        // Create file with initial content if provided
+        let initialContent = initialTitle.isEmpty ? "" : "\(initialTitle)\n\n"
+        
+        do {
+            try initialContent.write(to: noteURL, atomically: true, encoding: .utf8)
+            print("Created new note: \(filename) with UUID: \(uuid.uuidString)")
+            return noteURL
+        } catch {
+            print("Error creating note file: \(error)")
+            // Remove from index if file creation failed
+            removeNoteFromIndex(filename: filename)
+            return nil
+        }
+    }
+    
+    // MARK: - Smart filename updates on line change
+    
+    func updateFilenameWhenLeavingFirstLine(for note: NoteItem) {
+        // Only update when user moves away from first line
+        // This provides clean, predictable behavior
+        updateFilenameIfNeeded(for: note)
+    }
+    
+    func updateDisplayTitleOnly(for note: NoteItem) {
+        // Update just the display title without renaming file
+        // Useful for real-time UI updates while user is still editing
+        let newTitle = extractTitleFromContent(url: note.url)
+        note.title = newTitle
+    }
+    
+    private func updateFilenameIfNeeded(for note: NoteItem) {
+        let currentFilename = note.url.lastPathComponent
+        let newTitle = extractTitleFromContent(url: note.url)
+        let expectedFilename = sanitizeFilename(newTitle) + ".md"
+        
+        // Update display title immediately
+        note.title = newTitle
+        
+        // Check if filename should change
+        guard currentFilename != expectedFilename else { return }
+        
+        // Handle filename conflicts
+        let notesDirectory = getAppNotesDirectory()
+        var finalFilename = expectedFilename
+        var finalURL = notesDirectory.appendingPathComponent(finalFilename)
+        var counter = 1
+        
+        while FileManager.default.fileExists(atPath: finalURL.path) && finalURL != note.url {
+            let baseName = sanitizeFilename(newTitle)
+            finalFilename = "\(baseName) \(counter).md"
+            finalURL = notesDirectory.appendingPathComponent(finalFilename)
+            counter += 1
+        }
+        
+        // Perform the rename
+        do {
+            try FileManager.default.moveItem(at: note.url, to: finalURL)
+            
+            // Update index
+            updateFilenameInIndex(oldFilename: currentFilename, newFilename: finalFilename)
+            
+            // Update note URL
+            note.url = finalURL
+            
+            print("Renamed note: \(currentFilename) -> \(finalFilename)")
+            
+            // Reload notes to ensure consistency
+            DispatchQueue.main.async {
+                self.loadNotes()
+            }
+            
+        } catch {
+            print("Error renaming note from \(currentFilename) to \(finalFilename): \(error)")
+        }
+    }
+    
+
 } 

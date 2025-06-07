@@ -3,7 +3,7 @@ import Foundation
 class NoteItem: Identifiable, Hashable, ObservableObject {
     let id: UUID
     var title: String
-    let url: URL
+    var url: URL // Changed from let to var to allow URL updates when files are renamed
     @Published var isPinned: Bool = false
     var lastModified: Date? // Optional: for sorting or display
     var wordCount: Int // Total word count of the note's content
