@@ -1,150 +1,189 @@
 # FloatingNotes
 
-A macOS app for creating floating note windows.
+A lightweight, elegant macOS app for quick note-taking with floating, transparent windows that integrate seamlessly with your desktop workflow.
 
-## URL Schemes
+![macOS](https://img.shields.io/badge/macOS-14.0+-blue)
+![Swift](https://img.shields.io/badge/Swift-5.5+-orange)
+![SwiftUI](https://img.shields.io/badge/SwiftUI-3.0+-green)
 
-FloatingNotes supports URL schemes that allow other apps to interact with it programmatically.
+## ✨ Features
 
-### URL Scheme Format
+### 🪟 Floating Transparent Windows
+- **Beautiful blurry transparency** that blends with your desktop
+- **Always-on-top floating windows** that stay visible across all apps
+- **Multi-space support** - notes appear on all desktop spaces
+- **Intelligent window placement** with smart positioning for multiple windows
 
-The URL scheme is `floatingnotes://`
+### ⚡ Quick Access
+- **Global keyboard shortcuts** for instant note creation
+- **URL scheme support** for automation and integrations
+- **Menu bar integration** with quick access menu
+- **Dock or menu bar only** display options
 
-### Supported Actions
+### 📝 Smart Note Management
+- **Auto-save functionality** - your notes are saved automatically
+- **Markdown support** with live preview
+- **Pin important notes** to keep them accessible
+- **Notes list view** with search and organization
+- **Custom storage locations** - choose where your notes are saved
 
-#### Create a New Note
+### ⌨️ Keyboard-First Experience
+- **Immediate text input** - start typing as soon as a window opens
+- **Customizable keyboard shortcuts**
+- **Focus management** for seamless navigation
+- **Rich text editing** with markdown formatting
 
-Create a new empty note:
+## 🚀 Getting Started
+
+### Installation
+
+1. Download the latest release from the [Releases](../../releases) page
+2. Drag FloatingNotes.app to your Applications folder
+3. Launch the app and grant necessary permissions
+
+### First Launch
+
+On first launch, FloatingNotes will:
+- Create a notes directory in `~/Documents/FloatingNotesApp/`
+- Set up default keyboard shortcuts
+- Display your first floating note window
+
+## ⌨️ Keyboard Shortcuts
+
+| Action | Default Shortcut | Customizable |
+|--------|------------------|--------------|
+| Create New Note | `⌘⇧N` | ✅ |
+| Open Recent Note | `⌘⇧O` | ✅ |
+
+*Shortcuts can be customized in Settings → Keyboard Shortcuts*
+
+## 🔗 URL Scheme Integration
+
+FloatingNotes supports URL schemes for automation and integration with other apps:
+
+### Create New Note
 ```
 floatingnotes://new
 floatingnotes://create
-floatingnotes:///new
-floatingnotes:///create
 ```
 
-Create a new note with initial content:
+### Create Note with Content
 ```
-floatingnotes://new?text=Your%20note%20content%20here
-floatingnotes://create?content=Your%20note%20content%20here
+floatingnotes://new?text=Your%20note%20content
+floatingnotes://create?content=Your%20note%20content
 ```
 
-#### Open Most Recent Note
-
-Open the most recently modified note:
+### Open Recent Note
 ```
 floatingnotes://recent
 floatingnotes://last
-floatingnotes:///recent
-floatingnotes:///last
 ```
 
-### Examples
+## ⚙️ Settings & Customization
 
-#### From Terminal/Scripts
+Access settings through the menu bar icon or the application menu:
 
-```bash
-# Create a new empty note
-open "floatingnotes://new"
+### 📁 Storage Settings
+- **Custom storage location** - choose where notes are saved
+- **Note migration** - easily move existing notes to new locations
+- **Directory management** with automatic folder creation
 
-# Create a note with content
-open "floatingnotes://new?text=Meeting%20notes%20for%20today"
+### 📌 Pin Notes
+- **Pin important notes** to keep them easily accessible
+- **Pinned notes management** in the notes list view
 
-# Open the most recent note
-open "floatingnotes://recent"
+### 🖥️ App Display
+- **Menu bar mode** - run quietly in the menu bar
+- **Dock mode** - traditional dock icon behavior
+- **Toggle between modes** without restarting
+
+### ⌨️ Keyboard Shortcuts
+- **Enable/disable shortcuts** individually
+- **Custom key combinations** for all actions
+- **Real-time shortcut testing**
+
+## 🏗️ Technical Features
+
+### Window Management
+- **NSWindow-based** floating windows with proper focus handling
+- **Visual effect blur** using NSVisualEffectView
+- **Memory efficient** window lifecycle management
+- **Multi-window support** with intelligent positioning
+
+### Data Persistence
+- **Automatic saving** as you type
+- **File-based storage** with standard text files
+- **Markdown support** with SwiftDown integration
+- **Robust file management** with error handling
+
+### User Experience
+- **Immediate focus** on new windows
+- **Seamless transparency** that doesn't interfere with desktop
+- **Smart window behavior** across multiple displays
+- **Accessibility support** with proper focus management
+
+## 🛠️ Development
+
+### Requirements
+- macOS 11.0+
+- Xcode 13.0+
+- Swift 5.5+
+
+### Dependencies
+- **KeyboardShortcuts** - Global keyboard shortcut management
+- **SwiftDown** - Markdown parsing and rendering
+- **SwiftUI** - Modern UI framework
+- **AppKit** - Native macOS window management
+
+### Project Structure
+```
+FloatingNotes/
+├── FloatingNotesApp.swift          # Main app entry point
+├── ContentView.swift               # Note window UI
+├── WindowManager.swift             # Window lifecycle management
+├── NotesManager.swift              # Note data management
+├── SettingsView.swift              # Settings interface
+├── NotesListView.swift             # Notes browser
+├── MenuBarManager.swift            # Menu bar integration
+└── Supporting Files/
+    ├── KeyboardShortcutNames.swift
+    ├── MenuCommands.swift
+    └── AppDisplayManager.swift
 ```
 
-#### From Other Apps
+### Building
+1. Clone the repository
+2. Open `FloatingNotes.xcodeproj` in Xcode
+3. Build and run (⌘R)
 
-You can use these URLs in:
-- Alfred workflows
-- Raycast extensions
-- AppleScript
-- Shortcuts app
-- Any app that can open URLs
+## 📖 Guides
 
-#### AppleScript Example
+The project includes detailed implementation guides:
 
-```applescript
-tell application "System Events"
-    open location "floatingnotes://new?text=Quick%20note%20from%20AppleScript"
-end tell
-```
+- **[Transparent Blurry Windows Guide](TransparentBlurryWindows_Guide.md)** - Complete implementation details for creating beautiful transparent windows
+- **[Window Focus Guide](WindowFocus_Guide.md)** - Comprehensive focus management techniques
 
-#### Shortcuts App
+## 🤝 Contributing
 
-1. Add a "Open URLs" action
-2. Set the URL to `floatingnotes://new?text=Your note text here`
-3. Run the shortcut
+Contributions are welcome! Please feel free to submit pull requests or create issues for bugs and feature requests.
 
-### URL Encoding
+### Areas for Contribution
+- UI/UX improvements
+- Additional keyboard shortcuts
+- Export/import functionality
+- Theme customization
+- Plugin system
 
-Remember to URL-encode special characters in the text parameter:
-- Spaces: `%20`
-- Newlines: `%0A`
-- Special characters should be properly encoded
+## 📄 License
 
-### Features
+This project is available under the MIT License. See LICENSE file for details.
 
-- **Floating Windows**: Notes appear as floating windows that stay on top
-- **Cross-Space**: Notes follow you across different desktop spaces
-- **Auto-Save**: Notes are automatically saved as you type
-- **Keyboard Shortcuts**: Global shortcuts for quick note creation
-- **URL Integration**: Create and access notes from other applications
+## 🙏 Acknowledgments
 
-## Features
+- Built with ❤️ for the macOS community
+- Inspired by the need for seamless, non-intrusive note-taking
+- Special thanks to the SwiftUI and AppKit communities
 
-### Notes Storage
-- **Customizable Storage Location**: Choose where your notes are stored on your system
-- **Default Location**: `~/Documents/FloatingNotesApp/`
-- **Migration Support**: Automatically migrate existing notes when changing storage location
-- **Flexible Options**: Change location with or without migrating existing notes
+---
 
-### Keyboard Shortcuts
-- **Create New Note**: Cmd+Shift+N (configurable)
-- **Open Recent Note**: Cmd+Shift+O (configurable)
-- **Show All Notes**: Cmd+Shift+L
-- **Toggle Shortcuts**: Enable/disable individual shortcuts in Settings
-
-### Note Management
-- **Pin/Unpin Notes**: Keep important notes at the top of your list
-- **Search**: Quickly find notes by title
-- **Auto-save**: Notes are automatically saved as you type
-- **Markdown Support**: Notes are saved as `.md` files
-
-## Settings
-
-Access settings through the app menu or by pressing Cmd+, (when implemented).
-
-### Notes Storage Settings
-1. **View Current Location**: See where your notes are currently stored
-2. **Change Location**: Select a new folder for storing notes
-3. **Migration Options**:
-   - **Migrate**: Copy existing notes to the new location
-   - **Change Without Migrating**: Start fresh in the new location
-4. **Reset to Default**: Return to the default storage location
-
-### Keyboard Shortcuts Settings
-- Enable/disable individual shortcuts
-- Customize key combinations
-- System-wide shortcuts work when the app is running
-
-## File Format
-
-Notes are stored as Markdown files with the naming convention:
-```
-[Note Title]_[UUID].md
-```
-
-This ensures unique filenames while maintaining readable titles.
-
-## Requirements
-
-- macOS 15.4 or later
-- Sandbox permissions for file access
-
-## Privacy
-
-The app only accesses:
-- The selected notes storage directory
-- User-selected folders (when changing storage location)
-- No network access or data collection 
+**FloatingNotes** - Where your thoughts float freely on your desktop ✨ 
